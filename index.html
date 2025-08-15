@@ -91,21 +91,22 @@ Requires: A-Frame (aframe.io), aframe-extras (for simple animation), aframe-asse
 
       <!-- ==================== SCENE 1 ==================== -->
       <a-sky id="scene1-sky" src="#scene1-img" visible="false"></a-sky>
-      <a-entity id="scene1-btn-entity" visible="false">
-        <a-plane id="scene1-btn"
-          color="#fff"
-          width="0.5" height="0.2"
-          position="0.6 1.2 -1.2"
-          opacity="0"
-          material="shader: flat; transparent: true"
-        ></a-plane>
-        <a-text value="Let's go"
-          align="center"
-          color="#000"
-          position="0.6 1.2 -1.12"
-          width="1.2"
-        ></a-text>
-      </a-entity>
+<a-entity id="scene1-btn-entity" visible="false" class="clickable">
+  <a-plane id="scene1-btn"
+    color="#fff"
+    width="0.5" height="0.2"
+    position="0.6 1.2 -1.2"
+    opacity="0"
+    material="shader: flat; transparent: true"
+  ></a-plane>
+  <a-text value="Let's go"
+    align="center"
+    color="#000"
+    position="0.6 1.2 -1.12"
+    width="1.2"
+    class="clickable"
+  ></a-text>
+</a-entity>
 
       <!-- ==================== SCENE 2 ==================== -->
       <a-sky id="scene2-sky" src="#scene2-img" visible="false"></a-sky>
@@ -253,10 +254,10 @@ Requires: A-Frame (aframe.io), aframe-extras (for simple animation), aframe-asse
           };
         }
         // "Let's go" button click/gaze
-        document.querySelector('#scene1-btn').addEventListener('click', () => {
-          playUIClick();
-          enterScene2();
-        });
+document.querySelector('#scene1-btn-entity').addEventListener('click', () => {
+  playUIClick();
+  enterScene2();
+});
 
         // =============== SCENE 2 LOGIC ===============
         function enterScene2() {
