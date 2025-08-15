@@ -27,8 +27,8 @@ Requires: A-Frame (aframe.io), aframe-extras (for simple animation), aframe-asse
     <style>
       body { margin:0; background: #000 }
       .a-enter-vr-button {
-        top: 10px !important;
-        right: 10px !important;
+        top: 30px !important;
+        right: 30px !important;
       }
     </style>
   </head>
@@ -161,22 +161,7 @@ Requires: A-Frame (aframe.io), aframe-extras (for simple animation), aframe-asse
       <a-sky id="scene3A-sky" src="#scene3A-img" visible="false"></a-sky>
       <a-sky id="scene3B-sky" src="#scene3B-img" visible="false"></a-sky>
 
-      <!-- =============== VR MODE TOGGLE BUTTON =============== -->
-      <!-- Always visible, placed bottom right, simple style -->
-      <a-entity id="vr-toggle-entity" visible="true"
-        position="1.2 0.6 -1.2"
-        geometry="primitive: plane; width: 0.32; height: 0.12"
-        material="color: #fff; shader: flat; transparent: true; opacity: 0.85"
-        class="clickable"
-      >
-        <a-text id="vr-toggle-text"
-          value="VR Mode"
-          align="center"
-          color="#333"
-          position="0 0 0.01"
-          width="0.7"
-        ></a-text>
-      </a-entity>
+
 
       <!-- =============== CAMERA & CURSOR =============== -->
       <!-- Camera with cursor for gaze/tap interaction -->
