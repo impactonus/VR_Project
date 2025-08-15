@@ -2,162 +2,317 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>VR Scene Flow</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://unpkg.com/aframe-event-set-component/dist/aframe-event-set-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-layout-component/dist/aframe-layout-component.min.js"></script>
-    <script>
-      AFRAME.registerComponent('click-action', {
-        schema: {action: {type: 'string'}},
-        init: function () {
-          const el = this.el;
-          const action = this.data.action;
-          const trigger = () => {
-            el.sceneEl.emit(action);
-          };
-          el.addEventListener('click', trigger);
-          el.addEventListener('mouseenter', () => {
-            this.timeout = setTimeout(trigger, 1500); // 1.5s gaze
-          });
-          el.addEventListener('mouseleave', () => {
-            clearTimeout(this.timeout);
-          });
-        }
-      });
-    </script>
+    <title>Cardboard VR Experience</title>
+    <meta name="description" content="Google Cardboard VR Demo">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-event-set-component@5.0.0/dist/aframe-event-set-component.min.js"></script>
   </head>
   <body>
-    <a-scene>
-      <!-- Assets -->
+    <audio id="ui-click" src="assets/ui_click.mp3"></audio>
+    <audio id="audio-intro" src="assets/audio_intro.mp3"></audio>
+    <audio id="audio-scene2" src="assets/audio_scene2.mp3"></audio>
+    <audio id="audio-quiz" src="assets/audio_quiz.mp3"></audio>
+    <audio id="audio-scene3A" src="assets/audio_scene3A.mp3"></audio>
+    <audio id="audio-scene3B" src="assets/audio_scene3B.mp3"></audio>
+
+    <video id="video" src="assets/video.mp4" crossorigin="anonymous"></video>
+  
+    <a-scene background="color: black" loading-screen="dotsColor: white; backgroundColor: black;">
+      <!-- Assets for images & video textures -->
       <a-assets>
-        <img id="scene1" src="assets/scene1.jpg">
-        <img id="scene2" src="assets/scene2.jpg">
-        <img id="scene3A" src="assets/scene3A.jpg">
-        <img id="scene3B" src="assets/scene3B.jpg">
-        <img id="videoThumb" src="assets/video_thumbnail.jpg">
-        <audio id="audioIntro" src="assets/audio_intro.mp3"></audio>
-        <audio id="audioScene2" src="assets/audio_scene2.mp3"></audio>
-        <audio id="audioQuiz" src="assets/audio_quiz.mp3"></audio>
-        <audio id="audioScene3A" src="assets/audio_scene3A.mp3"></audio>
-        <audio id="audioScene3B" src="assets/audio_scene3B.mp3"></audio>
-        <video id="video" src="assets/video.mp4" crossorigin="anonymous"></video>
+        <img id="scene1" src="assets/scene1.jpg"/>
+        <img id="scene2" src="assets/scene2.jpg"/>
+        <img id="scene3A" src="assets/scene3A.jpg"/>
+        <img id="scene3B" src="assets/scene3B.jpg"/>
+        <img id="video-thumb" src="assets/video_thumbnail.jpg"/>
+        <!-- Preload video for use as texture -->
+        <video id="video-asset" src="assets/video.mp4" crossOrigin="anonymous" preload="auto"></video>
       </a-assets>
 
-      <!-- Sky -->
-      <a-sky id="sky" src="#scene1"></a-sky>
+      <!-- Custom component for gaze-based buttons -->
+      <script>
+        AFRAME.registerComponent('gaze-button', {
+          schema: {
+            action: {type: 'string'}
+          },
+          init: function () {
+            var el = this.el;
+            el.addEventListener('mouseenter', () => {
+              el.setAttribute('material', 'color', '#CCCCCC'); // Lighten on gaze
+              el.emit('fadein');
+            });
+            el.addEventListener('mouseleave', () => {
+              el.setAttribute('material', 'color', 'white');
+            });
+            el.addEventListener('click', () => {
+              document.getElementById('ui-click').play();
+              this.el.emit('buttonaction');
+            });
+            el.addEventListener('buttonaction', () => {
+              el.setAttribute('visible', false);
+            });
+            // Gaze support for Cardboard using fuse via cursor
+            el.addEventListener('fusing', () => {
+              el.setAttribute('scale', '1.2 1.2 1.2');
+            });
+            el.addEventListener('mouseleave', () => {
+              el.setAttribute('scale', '1 1 1');
+            })
+          }
+        });
+      </script>
 
-      <!-- Camera + Cursor -->
+      <!-- Camera & cursor (for gaze support) -->
       <a-entity id="rig">
-        <a-entity camera look-controls position="0 1.6 0">
-          <a-entity
-            cursor="fuse: true; fuseTimeout: 1500"
-            position="0 0 -1"
-            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-            material="color: white; shader: flat">
-          </a-entity>
+        <a-camera>
+          <!-- Gaze-based cursor for Cardboard/VR mode -->
+          <a-cursor 
+            id="cursor"
+            fuse="true" 
+            fuse-timeout="1200"
+            color="white"
+            rayOrigin="mouse"
+            material="shader: flat">
+          </a-cursor>
+        </a-camera>
+      </a-entity>
+
+      <!-- Loading Screen Overlay (hidden after load) -->
+      <a-entity id="loading" visible="true">
+        <a-plane color="black" width="6" height="6" position="0 0 -3"></a-plane>
+        <a-animation attribute="rotation"
+          dur="1000"
+          fill="forwards"
+          to="0 360 0"
+          repeat="indefinite"
+          easing="linear"></a-animation>
+        <!-- Replace with a loader if you want -->
+        <a-text value="Loading..." color="white" position="0 0 -2.8" align="center" width="4"></a-text>
+      </a-entity>
+
+      <!-- Enter Button after loading -->
+      <a-entity id="enter-scene" visible="false">
+        <!-- Position the button slightly away from center (e.g., right and up) -->
+        <a-plane 
+          position="1.2 0.6 -2.5"
+          width="1.2" 
+          height="0.4"
+          color="white"
+          material="shader: flat; opacity:0;"
+          gaze-button="action:enter"
+          id="enter-btn">
+          <a-text value="Click to Enter" color="black" align="center" width="1" position="0 0 0.01"></a-text>
+        </a-plane>
+      </a-entity>
+
+      <!-- Scene 1 -->
+      <a-entity id="scene1-entity" visible="false">
+        <a-sky src="#scene1"></a-sky>
+        <a-entity id="letsgo-button" visible="false">
+          <a-plane
+            position="0 0 -2.5"
+            width="1.2"
+            height="0.4"
+            color="white"
+            material="shader: flat; opacity:0;"
+            gaze-button="action:scene1"
+            id="letsgo-btn">
+            <a-text value="Let's go" color="black" align="center" width="1" position="0 0 0.01"></a-text>
+          </a-plane>
+        </a-entity>
+      </a-entity>
+      
+      <!-- Scene 2 -->
+      <a-entity id="scene2-entity" visible="false">
+        <a-sky src="#scene2"></a-sky>
+        <!-- Video Thumbnail on left -->
+        <a-plane
+          id="video-thumb-entity"
+          src="#video-thumb"
+          width="1"
+          height="0.7"
+          position="-1.5 0 -2"
+          gaze-button="action:playvideo">
+        </a-plane>
+        <!-- Video Player (hidden initially) -->
+        <a-video 
+          id="video-player"
+          src="#video-asset"
+          width="2"
+          height="1.2"
+          position="0 0 -2"
+          visible="false">
+        </a-video>
+        <!-- Yes/No Buttons for quiz (hidden initially) -->
+        <a-entity id="quiz-buttons" visible="false">
+          <a-plane
+            id="yes-button"
+            position="-0.7 -0.7 -2"
+            width="0.8"
+            height="0.4"
+            color="white"
+            material="shader: flat; opacity:0;"
+            gaze-button="action:yes">
+            <a-text value="Yes" color="black" align="center" width="0.7" position="0 0 0.01"></a-text>
+          </a-plane>
+          <a-plane
+            id="no-button"
+            position="0.7 -0.7 -2"
+            width="0.8"
+            height="0.4"
+            color="white"
+            material="shader: flat; opacity:0;"
+            gaze-button="action:no">
+            <a-text value="No" color="black" align="center" width="0.7" position="0 0 0.01"></a-text>
+          </a-plane>
         </a-entity>
       </a-entity>
 
-      <a-entity id="ui"></a-entity>
+      <!-- Scene 3A -->
+      <a-entity id="scene3A-entity" visible="false">
+        <a-sky src="#scene3A"></a-sky>
+      </a-entity>
+      <!-- Scene 3B -->
+      <a-entity id="scene3B-entity" visible="false">
+        <a-sky src="#scene3B"></a-sky>
+      </a-entity>
+
+      <!-- VR/Normal Mode toggle button (always visible) -->
+      <a-entity id="vr-toggle" position="2 1 -2">
+        <a-plane
+          width="0.9"
+          height="0.3"
+          color="white"
+          gaze-button="action:togglevr"
+          id="vr-btn">
+          <a-text value="Toggle VR" color="black" align="center" width="0.7" position="0 0 0.01"></a-text>
+        </a-plane>
+      </a-entity>
+      
+      <!-- Main Logic Controller (handles all transitions and events) -->
+      <script>
+        // Helper: fade in effect
+        function fadeInPlane(plane) {
+          let opacity = 0;
+          plane.setAttribute('material', 'opacity', opacity);
+          plane.setAttribute('visible', true);
+          function step() {
+            opacity += 0.04;
+            if (opacity <= 1) {
+              plane.setAttribute('material', 'opacity', opacity);
+              requestAnimationFrame(step);
+            }
+          }
+          step();
+        }
+
+        // Initial state
+        window.addEventListener('DOMContentLoaded', function () {
+          var loading = document.getElementById('loading');
+          var enterScene = document.getElementById('enter-scene');
+          var enterBtn = document.getElementById('enter-btn');
+
+          // Wait for all assets to be loaded
+          var checkAssetsLoaded = setInterval(function () {
+            var assets = document.querySelector('a-assets');
+            if (assets && assets.ready) {
+              clearInterval(checkAssetsLoaded);
+              loading.setAttribute('visible', false);
+              enterScene.setAttribute('visible', true);
+              fadeInPlane(enterBtn);
+            }
+          }, 500);
+
+          // Enter VR scene from loading screen
+          enterBtn.addEventListener('buttonaction', function () {
+            enterScene.setAttribute('visible', false);
+            showScene1();
+          });
+
+          // VR/Normal Mode toggle
+          document.getElementById('vr-btn').addEventListener('buttonaction', function () {
+            var scene = document.querySelector('a-scene');
+            if (scene.is('vr-mode')) {
+              scene.exitVR();
+            } else {
+              scene.enterVR();
+            }
+          });
+        });
+
+        // Scene 1 logic
+        function showScene1() {
+          var scene1e = document.getElementById('scene1-entity');
+          scene1e.setAttribute('visible', true);
+          var letsGoBtn = document.getElementById('letsgo-btn');
+          var letsGoEntity = document.getElementById('letsgo-button');
+          // Play intro audio
+          var audio = document.getElementById('audio-intro');
+          audio.play();
+          audio.onended = function () {
+            letsGoEntity.setAttribute('visible', true);
+            fadeInPlane(letsGoBtn);
+          };
+          letsGoBtn.addEventListener('buttonaction', function () {
+            scene1e.setAttribute('visible', false);
+            showScene2();
+          });
+        }
+
+        // Scene 2 logic
+        function showScene2() {
+          var scene2e = document.getElementById('scene2-entity');
+          scene2e.setAttribute('visible', true);
+          var audio = document.getElementById('audio-scene2');
+          audio.play();
+
+          // Video thumbnail logic
+          var videoThumb = document.getElementById('video-thumb-entity');
+          var videoPlayer = document.getElementById('video-player');
+          var video = document.getElementById('video-asset');
+          var quizButtons = document.getElementById('quiz-buttons');
+          var audioQuiz = document.getElementById('audio-quiz');
+          var yesBtn = document.getElementById('yes-button');
+          var noBtn = document.getElementById('no-button');
+
+          videoThumb.addEventListener('buttonaction', function () {
+            videoPlayer.setAttribute('visible', true);
+            video.play();
+            videoPlayer.setAttribute('src', '#video-asset');
+            videoThumb.setAttribute('visible', false);
+
+            video.onended = function () {
+              videoPlayer.setAttribute('visible', false);
+              quizButtons.setAttribute('visible', true);
+              audioQuiz.play();
+              fadeInPlane(yesBtn);
+              fadeInPlane(noBtn);
+            }
+          });
+
+          // Yes/No button logic
+          yesBtn.addEventListener('buttonaction', function () {
+            scene2e.setAttribute('visible', false);
+            showScene3A();
+          });
+          noBtn.addEventListener('buttonaction', function () {
+            scene2e.setAttribute('visible', false);
+            showScene3B();
+          });
+        }
+        // Scene 3A logic
+        function showScene3A() {
+          var s3A = document.getElementById('scene3A-entity');
+          s3A.setAttribute('visible', true);
+          document.getElementById('audio-scene3A').play();
+        }
+        // Scene 3B logic
+        function showScene3B() {
+          var s3B = document.getElementById('scene3B-entity');
+          s3B.setAttribute('visible', true);
+          document.getElementById('audio-scene3B').play();
+        }
+      </script>
     </a-scene>
-
-    <script>
-      const sky = document.querySelector('#sky');
-      const ui = document.querySelector('#ui');
-
-      let currentAudio = null;
-      let video = document.querySelector('#video');
-
-      function stopAudio() {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
-          currentAudio = null;
-        }
-      }
-
-      function playAudio(id) {
-        stopAudio();
-        currentAudio = document.querySelector(id);
-        currentAudio.play();
-      }
-
-      function clearUI() {
-        while (ui.firstChild) {
-          ui.removeChild(ui.firstChild);
-        }
-      }
-
-      function createButton(text, eventName, pos) {
-        const btn = document.createElement('a-entity');
-        btn.setAttribute('geometry', 'primitive: plane; height: 0.3; width: 1');
-        btn.setAttribute('material', 'color: #FF5733; opacity: 0.8');
-        btn.setAttribute('text', `value:${text}; align:center; color:white; width:4`);
-        btn.setAttribute('position', pos);
-        btn.setAttribute('click-action', `action:${eventName}`);
-        ui.appendChild(btn);
-      }
-
-      function scene1() {
-        clearUI();
-        sky.setAttribute('src', '#scene1');
-        playAudio('#audioIntro');
-        createButton('Enter', 'gotoScene2', '0 1.6 -2');
-      }
-
-      function scene2() {
-        clearUI();
-        sky.setAttribute('src', '#scene2');
-        playAudio('#audioScene2');
-
-        const thumb = document.createElement('a-image');
-        thumb.setAttribute('src', '#videoThumb');
-        thumb.setAttribute('width', '2');
-        thumb.setAttribute('height', '1');
-        thumb.setAttribute('position', '0 1.6 -3');
-        thumb.setAttribute('click-action', 'playVideo');
-        ui.appendChild(thumb);
-      }
-
-      function playVideoScene() {
-        clearUI();
-        stopAudio();
-        const vidScreen = document.createElement('a-video');
-        vidScreen.setAttribute('src', '#video');
-        vidScreen.setAttribute('width', '4');
-        vidScreen.setAttribute('height', '2');
-        vidScreen.setAttribute('position', '0 1.6 -3');
-        ui.appendChild(vidScreen);
-        video.play();
-        video.onended = quizScene;
-      }
-
-      function quizScene() {
-        clearUI();
-        playAudio('#audioQuiz');
-        createButton('Yes', 'gotoScene3A', '-1 1.6 -2');
-        createButton('No', 'gotoScene3B', '1 1.6 -2');
-      }
-
-      function scene3A() {
-        clearUI();
-        sky.setAttribute('src', '#scene3A');
-        playAudio('#audioScene3A');
-      }
-
-      function scene3B() {
-        clearUI();
-        sky.setAttribute('src', '#scene3B');
-        playAudio('#audioScene3B');
-      }
-
-      document.querySelector('a-scene').addEventListener('gotoScene2', scene2);
-      document.querySelector('a-scene').addEventListener('playVideo', playVideoScene);
-      document.querySelector('a-scene').addEventListener('gotoScene3A', scene3A);
-      document.querySelector('a-scene').addEventListener('gotoScene3B', scene3B);
-
-      scene1();
-    </script>
   </body>
 </html>
