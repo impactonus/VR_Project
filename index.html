@@ -1,297 +1,117 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
-  <title>Cardboard VR Flow (A-Frame, Gaze/Trigger)</title>
-  <!-- A-Frame core -->
-  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-  <style>
-    html,body { margin:0; height:100%; background:#000; }
-    .start-overlay {
-      position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
-      background: rgba(0,0,0,0.85); color: #fff; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial;
-      z-index: 9999; text-align: center; padding: 24px;
-    }
-    .start-overlay button { font-size: 18px; padding: 12px 18px; border-radius: 10px; border: 0; }
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VR Experience</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ngokevin/kframe@master/components/event-set/dist/aframe-event-set-component.min.js"></script>
+  </head>
+  <body>
+    <a-scene vr-mode-ui="enabled: true">
 
-    /* Big, always-visible VR/Cardboard button */
-    #vrButton {
-      position: absolute; right: 16px; bottom: 16px; z-index: 12;
-      background: rgba(0,0,0,0.7); color:#fff; padding:12px 16px; border-radius:10px;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; font-size: 15px; cursor:pointer;
-      user-select: none;
-    }
-  </style>
-</head>
-<body>
-  <!-- One-time gate to unlock mobile audio/video -->
-  <div id="startOverlay" class="start-overlay">
-    <div>
-      <h2 style="margin-bottom: 10px;">Tap to Start VR Experience</h2>
-      <p style="opacity:.8; margin:0 0 16px;">This unlocks audio/video on mobile and Cardboard.</p>
-      <button id="startBtnGate">Start</button>
-    </div>
-  </div>
+      <!-- Assets -->
+      <a-assets>
+        <img id="scene1" src="assets/scene1.jpg">
+        <img id="scene2" src="assets/scene2.jpg">
+        <img id="videoThumb" src="assets/video_thumbnail.jpg">
 
-  <!-- A-Frame Scene (full-page). VR UI enabled for Cardboard stereo. -->
-  <a-scene id="scene" vr-mode-ui="enabled: true" renderer="colorManagement: true; antialias: true">
-    <!-- Camera + Cardboard-ready Gaze Cursor (fuse triggers clicks) -->
-    <a-entity id="rig">
-      <a-entity id="camera" camera look-controls wasd-controls-enabled="false">
-        <a-entity id="gazeCursor"
-                  cursor="fuse: true; fuseTimeout: 1200"
-                  raycaster="objects: .clickable; interval: 0"
-                  position="0 0 -1"
-                  geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-                  material="shader: flat; opacity: 0.9">
-        </a-entity>
+        <video id="videoFile" src="assets/video.mp4" preload="auto" crossorigin="anonymous"></video>
+
+        <audio id="audioIntro" src="assets/audio_intro.mp3"></audio>
+        <audio id="audioScene2" src="assets/audio_scene2.mp3"></audio>
+      </a-assets>
+
+      <!-- Sky -->
+      <a-sky id="sky" src="#scene1"></a-sky>
+
+      <!-- Camera with gaze + click -->
+      <a-entity id="rig">
+        <a-camera>
+          <a-cursor 
+            fuse="true" 
+            fuse-timeout="1500"
+            material="color: white; shader: flat"
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03">
+          </a-cursor>
+        </a-camera>
       </a-entity>
-    </a-entity>
 
-    <!-- Preload all assets (files must live in ./assets/) -->
-    <a-assets id="assets" timeout="15000">
-      <!-- 360 images -->
-      <img id="imgScene1" src="assets/scene1.jpg" crossorigin="anonymous">
-      <img id="imgScene2" src="assets/scene2.jpg" crossorigin="anonymous">
-      <img id="imgScene3A" src="assets/scene3A.jpg" crossorigin="anonymous">
-      <img id="imgScene3B" src="assets/scene3B.jpg" crossorigin="anonymous">
+      <!-- Enter Button (Scene 1) -->
+      <a-entity id="enterButton" class="clickable"
+        geometry="primitive: plane; height: 0.5; width: 1"
+        material="color: #4CAF50"
+        position="0 -1.5 -3"
+        text="value: Enter; align: center; color: white"
+        event-set__mouseenter="scale: 1.2 1.2 1"
+        event-set__mouseleave="scale: 1 1 1">
+      </a-entity>
 
-      <!-- Audio clips -->
-      <audio id="audIntro" src="assets/audio_intro.mp3" preload="auto" crossorigin="anonymous"></audio>
-      <audio id="audScene2" src="assets/audio_scene2.mp3" preload="auto" crossorigin="anonymous"></audio>
-      <audio id="audQuiz"   src="assets/audio_quiz.mp3"   preload="auto" crossorigin="anonymous"></audio>
-      <audio id="aud3A"     src="assets/audio_scene3A.mp3" preload="auto" crossorigin="anonymous"></audio>
-      <audio id="aud3B"     src="assets/audio_scene3B.mp3" preload="auto" crossorigin="anonymous"></audio>
+      <!-- Video Thumbnail (Scene 2) -->
+      <a-entity id="videoThumbnail" class="clickable"
+        geometry="primitive: plane; height: 1; width: 1.78"
+        material="src: #videoThumb"
+        position="0 0 -3"
+        visible="false"
+        event-set__mouseenter="scale: 1.05 1.05 1"
+        event-set__mouseleave="scale: 1 1 1">
+      </a-entity>
 
-      <!-- Video + thumbnail -->
-      <img   id="videoThumb" src="assets/video_thumbnail.jpg" crossorigin="anonymous">
-      <video id="video1" src="assets/video.mp4" crossorigin="anonymous" playsinline webkit-playsinline preload="metadata"></video>
+      <!-- Video Screen -->
+      <a-video id="videoScreen" src="#videoFile" width="4" height="2.25" position="0 0 -4" visible="false"></a-video>
 
-      <!-- UI click sound (optional) -->
-      <audio id="uiClick" src="assets/ui_click.mp3" preload="auto" crossorigin="anonymous"></audio>
-    </a-assets>
+    </a-scene>
 
-    <!-- 360 Sky (starts on Scene 1) -->
-    <a-sky id="sky" src="#imgScene1" rotation="0 0 0"></a-sky>
+    <script>
+      let currentAudio = null;
 
-    <!-- Scene 1: Intro button (gaze/trigger clickable) -->
-    <a-entity id="scene1UI">
-      <a-plane class="clickable" id="btnNextToScene2" position="0 1.5 -3" width="1.8" height="0.6" color="#1e90ff" material="opacity: 0.95; shader: standard"></a-plane>
-      <a-text value="Enter" align="center" color="#fff" width="3" position="0 1.5 -2.95"></a-text>
-    </a-entity>
-
-    <!-- Scene 2: Video thumb + player + controls (hidden until scene 2) -->
-    <a-entity id="scene2UI" visible="false">
-      <!-- Thumbnail to start video -->
-      <a-plane class="clickable" id="thumbVideo" src="#videoThumb" position="0 1.5 -3" width="3.5" height="2" material="shader: flat"></a-plane>
-
-      <!-- Video surface -->
-      <a-video id="videoSurface" src="#video1" position="0 1.5 -3" width="3.5" height="2" visible="false"></a-video>
-
-      <!-- Play/Pause toggle button (also toggled by clicking video) -->
-      <a-plane class="clickable" id="btnToggleVideo" position="0 0.5 -3" width="1.4" height="0.46" color="#333" visible="false"></a-plane>
-      <a-text id="btnToggleVideoLabel" value="Pause" align="center" color="#fff" width="3" position="0 0.5 -2.95" visible="false"></a-text>
-    </a-entity>
-
-    <!-- Quiz (appears when video ends) -->
-    <a-entity id="quizUI" visible="false">
-      <a-text value="Quick Question" align="center" color="#fff" width="4" position="0 2.2 -3"></a-text>
-
-      <a-plane class="clickable" id="optA" position="-1.2 1.3 -3" width="1.8" height="0.6" color="#2e8b57"></a-plane>
-      <a-text value="Option A" align="center" color="#fff" width="3" position="-1.2 1.3 -2.95"></a-text>
-
-      <a-plane class="clickable" id="optB" position="1.2 1.3 -3" width="1.8" height="0.6" color="#c0392b"></a-plane>
-      <a-text value="Option B" align="center" color="#fff" width="3" position="1.2 1.3 -2.95"></a-text>
-    </a-entity>
-
-    <!-- Scene 3 (destination after quiz). Reuses one UI with dynamic content -->
-    <a-entity id="scene3UI" visible="false">
-      <a-plane class="clickable" id="btnRestart" position="0 1.3 -3" width="1.8" height="0.6" color="#1e90ff"></a-plane>
-      <a-text value="Restart" align="center" color="#fff" width="3" position="0 1.3 -2.95"></a-text>
-    </a-entity>
-
-    <!-- Optional: subtle reticle fill cue while fusing -->
-    <a-entity id="fuseFill" position="0 0 -0.99" geometry="primitive: ring; radiusInner: 0.021; radiusOuter: 0.029"
-              material="color: #fff; opacity: 0.15" visible="false"></a-entity>
-
-    <!-- Always-visible Cardboard button overlay -->
-    <div id="vrButton">🕶️ Enter VR / Cardboard</div>
-  </a-scene>
-
-  <script>
-    // ------------------ Helpers ------------------
-    const qs  = sel => document.querySelector(sel);
-    const qsa = sel => Array.from(document.querySelectorAll(sel));
-
-    // Audio manager that handles one foreground audio at a time.
-    let currentAudio = null;
-    function playAudio(elOrSelector) {
-      if (currentAudio && !currentAudio.paused) { try { currentAudio.pause(); currentAudio.currentTime = 0; } catch(e){} }
-      if (!elOrSelector) { currentAudio = null; return; }
-      const el = typeof elOrSelector === 'string' ? qs(elOrSelector) : elOrSelector;
-      if (!el) return;
-      currentAudio = el;
-      try { el.play(); } catch (e) { /* will be resumed on next user gesture */ }
-    }
-
-    function uiClick() { const s = qs('#uiClick'); if (!s) return; try { s.currentTime = 0; s.play(); } catch(e){} }
-
-    // Button hover feedback (simple scale pulse for gaze focus)
-    function makeHoverable(el) {
-      el.addEventListener('mouseenter', () => el.setAttribute('scale', '1.05 1.05 1'));
-      el.addEventListener('mouseleave', () => el.setAttribute('scale', '1 1 1'));
-    }
-
-    // Attach hover to all clickable planes once the scene is loaded
-    document.addEventListener('DOMContentLoaded', () => {
-      const sceneEl = qs('a-scene');
-      if (sceneEl.hasLoaded) { qsa('.clickable').forEach(makeHoverable); }
-      else { sceneEl.addEventListener('loaded', () => qsa('.clickable').forEach(makeHoverable)); }
-    });
-
-    // One-time gate: user gesture to unlock autoplay policies on mobile
-    const startOverlay = qs('#startOverlay');
-    const startBtnGate = qs('#startBtnGate');
-    startBtnGate.addEventListener('click', () => {
-      startOverlay.style.display = 'none';
-      initFlow();
-    });
-
-    // ------------------ Flow State ------------------
-    const sky = qs('#sky');
-
-    const scene1UI = qs('#scene1UI');
-    const btnNextToScene2 = qs('#btnNextToScene2');
-
-    const scene2UI = qs('#scene2UI');
-    const thumbVideo = qs('#thumbVideo');
-    const videoSurface = qs('#videoSurface');
-    const videoEl = qs('#video1');
-    const btnToggleVideo = qs('#btnToggleVideo');
-    const btnToggleVideoLabel = qs('#btnToggleVideoLabel');
-
-    const quizUI = qs('#quizUI');
-    const optA = qs('#optA');
-    const optB = qs('#optB');
-
-    const scene3UI = qs('#scene3UI');
-    const btnRestart = qs('#btnRestart');
-
-    // Audio elements
-    const audIntro = qs('#audIntro');
-    const audScene2 = qs('#audScene2');
-    const audQuiz = qs('#audQuiz');
-    const aud3A = qs('#aud3A');
-    const aud3B = qs('#aud3B');
-
-    // Unlock inline playback on iOS by calling play() and immediately pausing.
-    function primeMedia(el) { try { el.muted = true; el.play().then(() => el.pause()); } catch(e){} }
-
-    function initFlow() {
-      [audIntro, audScene2, audQuiz, aud3A, aud3B].forEach(a => { if (a) { a.preload = 'auto'; a.load(); }});
-      primeMedia(videoEl);
-
-      // Scene 1 setup
-      sky.setAttribute('src', '#imgScene1');
-      scene1UI.setAttribute('visible', true);
-      scene2UI.setAttribute('visible', false);
-      quizUI.setAttribute('visible', false);
-      scene3UI.setAttribute('visible', false);
-
-      // Try to play intro audio; if blocked, it will start on first interaction
-      audIntro.muted = false;
-      playAudio(audIntro);
-    }
-
-    // --------------- Interactions (Gaze/Trigger) ---------------
-    // Scene 1 → Scene 2
-    btnNextToScene2.addEventListener('click', () => {
-      uiClick();
-      sky.setAttribute('src', '#imgScene2');
-      scene1UI.setAttribute('visible', false);
-      scene2UI.setAttribute('visible', true);
-      playAudio(audScene2);
-    });
-
-    // Start video from thumbnail
-    thumbVideo.addEventListener('click', async () => {
-      uiClick();
-      thumbVideo.setAttribute('visible', false);
-
-      // Stop any audio and show video
-      playAudio(null);
-      videoSurface.setAttribute('visible', true);
-      btnToggleVideo.setAttribute('visible', true);
-      btnToggleVideoLabel.setAttribute('visible', true);
-
-      try {
-        videoEl.muted = false; // ensure audio is on
-        await videoEl.play();
-      } catch (e) {
-        btnToggleVideoLabel.setAttribute('value', 'Play');
+      function playAudio(id) {
+        stopCurrentAudio();
+        const audio = document.querySelector(id);
+        audio.currentTime = 0;
+        audio.play();
+        currentAudio = audio;
       }
-    });
 
-    // Toggle play/pause via button
-    function updateVideoToggleLabel() {
-      btnToggleVideoLabel.setAttribute('value', videoEl.paused ? 'Play' : 'Pause');
-    }
-
-    btnToggleVideo.addEventListener('click', () => {
-      uiClick();
-      if (videoEl.paused) { videoEl.play(); } else { videoEl.pause(); }
-      updateVideoToggleLabel();
-    });
-
-    // Also allow clicking the video surface to toggle
-    videoSurface.addEventListener('click', () => {
-      uiClick();
-      if (videoEl.paused) { videoEl.play(); } else { videoEl.pause(); }
-      updateVideoToggleLabel();
-    });
-
-    // When video ends → show quiz and play quiz audio
-    videoEl.addEventListener('ended', () => {
-      videoSurface.setAttribute('visible', false);
-      btnToggleVideo.setAttribute('visible', false);
-      btnToggleVideoLabel.setAttribute('visible', false);
-
-      quizUI.setAttribute('visible', true);
-      playAudio(audQuiz);
-    });
-
-    // Quiz branching → Scene 3A or 3B
-    optA.addEventListener('click', () => goToScene3('A'));
-    optB.addEventListener('click', () => goToScene3('B'));
-
-    function goToScene3(which) {
-      uiClick();
-      quizUI.setAttribute('visible', false);
-      scene3UI.setAttribute('visible', true);
-
-      if (which === 'A') {
-        sky.setAttribute('src', '#imgScene3A');
-        playAudio(aud3A);
-      } else {
-        sky.setAttribute('src', '#imgScene3B');
-        playAudio(aud3B);
+      function stopCurrentAudio() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          currentAudio = null;
+        }
       }
-    }
 
-    // Restart flow back to Scene 1
-    btnRestart.addEventListener('click', () => {
-      uiClick();
-      try { videoEl.pause(); videoEl.currentTime = 0; } catch(e){}
-      initFlow();
-    });
+      // Scene 1: Start audio
+      window.addEventListener('load', () => {
+        playAudio('#audioIntro');
+      });
 
-    // --------------- Cardboard Button ---------------
-    const vrBtn = document.getElementById('vrButton');
-    vrBtn.addEventListener('click', () => {
-      const sceneEl = document.getElementById('scene');
-      if (sceneEl && sceneEl.enterVR) sceneEl.enterVR();
-    });
-  </script>
-</body>
+      // Enter Button → Scene 2
+      const enterButton = document.querySelector('#enterButton');
+      enterButton.addEventListener('click', goToScene2);
+      enterButton.addEventListener('touchstart', goToScene2); // mobile tap
+
+      function goToScene2() {
+        stopCurrentAudio();
+        document.querySelector('#sky').setAttribute('src', '#scene2');
+        document.querySelector('#enterButton').setAttribute('visible', false);
+        document.querySelector('#videoThumbnail').setAttribute('visible', true);
+        playAudio('#audioScene2');
+      }
+
+      // Video Thumbnail → Play video
+      const videoThumbnail = document.querySelector('#videoThumbnail');
+      videoThumbnail.addEventListener('click', playVideo);
+      videoThumbnail.addEventListener('touchstart', playVideo);
+
+      function playVideo() {
+        stopCurrentAudio();
+        document.querySelector('#videoThumbnail').setAttribute('visible', false);
+        const videoScreen = document.querySelector('#videoScreen');
+        videoScreen.setAttribute('visible', true);
+        const videoFile = document.querySelector('#videoFile');
+        videoFile.play();
+      }
+    </script>
+  </body>
 </html>
