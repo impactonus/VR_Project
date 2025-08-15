@@ -1,40 +1,54 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <meta charset="utf-8">
     <meta charset="utf-8" />
     <title>VR Experience</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/ngokevin/kframe@master/components/event-set/dist/aframe-event-set-component.min.js"></script>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: black;
+      }
+      #loadingScreen {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: black;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-family: sans-serif;
+        z-index: 9999;
+      }
+      .spinner {
+        border: 8px solid rgba(255, 255, 255, 0.2);
+        border-top: 8px solid white;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 10px;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
   <body>
-    <a-scene vr-mode-ui="enabled: true">
-    <a-scene cursor="rayOrigin: mouse" raycaster="objects: .clickable">
-      <!-- Camera + Cursor (supports Google Cardboard gaze + tap) -->
-      <a-entity id="cameraRig">
-        <a-camera position="0 1.6 0" wasd-controls-enabled="false">
-          <a-cursor
-            id="cursor"
-            fuse="true"
-            fuse-timeout="1000"
-            material="color: white; shader: flat"
-          ></a-cursor>
-        </a-camera>
-      </a-entity>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+      <div class="spinner"></div>
+      <div>Loading VR Experience...</div>
+    </div>
 
-      <!-- Background Sky -->
-      <a-sky id="sky" src="#scene1Img"></a-sky>
-
-      <!-- Assets -->
-      <a-assets>
-        <img id="scene1" src="assets/scene1.jpg">
-        <img id="scene2" src="assets/scene2.jpg">
-        <img id="videoThumb" src="assets/video_thumbnail.jpg">
-
-        <video id="videoFile" src="assets/video.mp4" preload="auto" crossorigin="anonymous"></video>
-
+    <a-scene vr-mode-ui="enabled: true" loading-screen="enabled: false">
+      <a-assets timeout="20000">
         <!-- Images -->
         <img id="scene1Img" src="assets/scene1.jpg" />
         <img id="scene2Img" src="assets/scene2.jpg" />
@@ -62,13 +76,13 @@
       </a-assets>
 
       <!-- Sky -->
-      <a-sky id="sky" src="#scene1"></a-sky>
+      <a-sky id="sky" src="#scene1Img"></a-sky>
 
-      <!-- Camera with gaze + click -->
+      <!-- Camera -->
       <a-entity id="rig">
         <a-camera>
-          <a-cursor 
-            fuse="true" 
+          <a-cursor
+            fuse="true"
             fuse-timeout="1500"
             material="color: white; shader: flat"
             geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03">
@@ -76,29 +90,19 @@
         </a-camera>
       </a-entity>
 
-      <!-- Enter Button (Scene 1) -->
-      <a-entity id="enterButton" class="clickable"
-        geometry="primitive: plane; height: 0.5; width: 1"
-        material="color: #4CAF50"
-        position="0 -1.5 -3"
-      <!-- Scene 1 Button -->
+      <!-- Enter Button -->
       <a-entity
         id="enterBtn"
         geometry="primitive: plane; height: 0.5; width: 1.5"
         material="color: blue"
         text="value: Enter; align: center; color: white"
+        position="0 1.6 -3"
+        class="clickable"
         event-set__mouseenter="scale: 1.2 1.2 1"
         event-set__mouseleave="scale: 1 1 1">
       </a-entity>
-        position="0 1.6 -3"
-        class="clickable"
-      ></a-entity>
 
-      <!-- Video Thumbnail (Scene 2) -->
-      <a-entity id="videoThumbnail" class="clickable"
-        geometry="primitive: plane; height: 1; width: 1.78"
-        material="src: #videoThumb"
-        position="0 0 -3"
+      <!-- Video Thumbnail -->
       <a-plane
         id="videoThumbPlane"
         src="#videoThumb"
@@ -106,22 +110,20 @@
         width="1.78"
         position="0 1.6 -3"
         visible="false"
+        class="clickable"
         event-set__mouseenter="scale: 1.05 1.05 1"
         event-set__mouseleave="scale: 1 1 1">
-      </a-entity>
-        class="clickable"
-      ></a-plane>
+      </a-plane>
 
       <!-- Video Screen -->
-      <a-video id="videoScreen" src="#videoFile" width="4" height="2.25" position="0 0 -4" visible="false"></a-video>
       <a-video
         id="videoScreen"
         src="#video"
         height="1"
         width="1.78"
         position="0 1.6 -3"
-        visible="false"
-      ></a-video>
+        visible="false">
+      </a-video>
 
       <!-- Quiz Buttons -->
       <a-entity
@@ -131,8 +133,8 @@
         text="value: Yes; align: center; color: white"
         position="-1 1.6 -3"
         visible="false"
-        class="clickable"
-      ></a-entity>
+        class="clickable">
+      </a-entity>
 
       <a-entity
         id="noBtn"
@@ -141,29 +143,17 @@
         text="value: No; align: center; color: white"
         position="1 1.6 -3"
         visible="false"
-        class="clickable"
-      ></a-entity>
+        class="clickable">
+      </a-entity>
     </a-scene>
 
     <script>
-      let currentAudio = null;
-
-      function playAudio(id) {
-        stopCurrentAudio();
-        const audio = document.querySelector(id);
-        audio.currentTime = 0;
-        audio.play();
-        currentAudio = audio;
       const sky = document.getElementById("sky");
-
-      // Buttons
       const enterBtn = document.getElementById("enterBtn");
       const videoThumbPlane = document.getElementById("videoThumbPlane");
       const videoScreen = document.getElementById("videoScreen");
       const yesBtn = document.getElementById("yesBtn");
       const noBtn = document.getElementById("noBtn");
-
-      // Media
       const audioIntro = document.getElementById("audioIntro");
       const audioScene2 = document.getElementById("audioScene2");
       const audioScene3A = document.getElementById("audioScene3A");
@@ -171,90 +161,58 @@
       const audioQuiz = document.getElementById("audioQuiz");
       const clickSound = document.getElementById("clickSound");
       const video = document.getElementById("video");
+      let currentAudio = null;
 
       function stopAllAudio() {
         [audioIntro, audioScene2, audioScene3A, audioScene3B, audioQuiz].forEach(
-          (a) => {
-            a.pause();
-            a.currentTime = 0;
-          }
+          (a) => { a.pause(); a.currentTime = 0; }
         );
       }
-
       function stopCurrentAudio() {
         if (currentAudio) {
           currentAudio.pause();
           currentAudio.currentTime = 0;
           currentAudio = null;
         }
-      // Scene 1
+      }
+      function playAudio(audio) {
+        stopCurrentAudio();
+        audio.currentTime = 0;
+        audio.play();
+        currentAudio = audio;
+      }
       function startScene1() {
         sky.setAttribute("src", "#scene1Img");
         enterBtn.setAttribute("visible", true);
         stopAllAudio();
-        audioIntro.play();
+        playAudio(audioIntro);
       }
-
-      // Scene 1: Start audio
-      window.addEventListener('load', () => {
-        playAudio('#audioIntro');
-      });
-      // Scene 2
       function startScene2() {
         sky.setAttribute("src", "#scene2Img");
         enterBtn.setAttribute("visible", false);
         videoThumbPlane.setAttribute("visible", true);
         stopAllAudio();
-        audioScene2.play();
+        playAudio(audioScene2);
       }
-
-      // Enter Button → Scene 2
-      const enterButton = document.querySelector('#enterButton');
-      enterButton.addEventListener('click', goToScene2);
-      enterButton.addEventListener('touchstart', goToScene2); // mobile tap
-
-      function goToScene2() {
-        stopCurrentAudio();
-        document.querySelector('#sky').setAttribute('src', '#scene2');
-        document.querySelector('#enterButton').setAttribute('visible', false);
-        document.querySelector('#videoThumbnail').setAttribute('visible', true);
-        playAudio('#audioScene2');
-      // Scene 3A
       function startScene3A() {
         sky.setAttribute("src", "#scene3AImg");
         yesBtn.setAttribute("visible", false);
         noBtn.setAttribute("visible", false);
         stopAllAudio();
-        audioScene3A.play();
+        playAudio(audioScene3A);
       }
-
-      // Video Thumbnail → Play video
-      const videoThumbnail = document.querySelector('#videoThumbnail');
-      videoThumbnail.addEventListener('click', playVideo);
-      videoThumbnail.addEventListener('touchstart', playVideo);
-
-      function playVideo() {
-        stopCurrentAudio();
-        document.querySelector('#videoThumbnail').setAttribute('visible', false);
-        const videoScreen = document.querySelector('#videoScreen');
-        videoScreen.setAttribute('visible', true);
-        const videoFile = document.querySelector('#videoFile');
-        videoFile.play();
-      // Scene 3B
       function startScene3B() {
         sky.setAttribute("src", "#scene3BImg");
         yesBtn.setAttribute("visible", false);
         noBtn.setAttribute("visible", false);
         stopAllAudio();
-        audioScene3B.play();
+        playAudio(audioScene3B);
       }
 
-      // Click / Gaze Interactions
       enterBtn.addEventListener("click", () => {
         clickSound.play();
         startScene2();
       });
-
       videoThumbPlane.addEventListener("click", () => {
         clickSound.play();
         videoThumbPlane.setAttribute("visible", false);
@@ -262,26 +220,26 @@
         stopAllAudio();
         video.play();
       });
-
       video.addEventListener("ended", () => {
         videoScreen.setAttribute("visible", false);
         yesBtn.setAttribute("visible", true);
         noBtn.setAttribute("visible", true);
-        audioQuiz.play();
+        playAudio(audioQuiz);
       });
-
       yesBtn.addEventListener("click", () => {
         clickSound.play();
         startScene3A();
       });
-
       noBtn.addEventListener("click", () => {
         clickSound.play();
         startScene3B();
       });
 
-      // Start experience
-      startScene1();
+      // Hide loading screen when assets are loaded
+      document.querySelector("a-scene").addEventListener("loaded", () => {
+        document.getElementById("loadingScreen").style.display = "none";
+        startScene1();
+      });
     </script>
   </body>
 </html>
