@@ -2,162 +2,207 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>VR Scene Flow</title>
+    <title>VR Project</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://unpkg.com/aframe-event-set-component/dist/aframe-event-set-component.min.js"></script>
-    <script src="https://unpkg.com/aframe-layout-component/dist/aframe-layout-component.min.js"></script>
-    <script>
-      AFRAME.registerComponent('click-action', {
-        schema: {action: {type: 'string'}},
-        init: function () {
-          const el = this.el;
-          const action = this.data.action;
-          const trigger = () => {
-            el.sceneEl.emit(action);
-          };
-          el.addEventListener('click', trigger);
-          el.addEventListener('mouseenter', () => {
-            this.timeout = setTimeout(trigger, 1500); // 1.5s gaze
-          });
-          el.addEventListener('mouseleave', () => {
-            clearTimeout(this.timeout);
-          });
-        }
-      });
-    </script>
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@master/dist/aframe-master.min.js"></script>
+    <style>
+      /* ====== LOADING SCREEN ====== */
+      #loadingScreen {
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        background-color: black;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        z-index: 9999;
+      }
+      .loader {
+        border: 8px solid #333;
+        border-top: 8px solid white;
+        border-radius: 50%;
+        width: 60px;
+        height: 60px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    </style>
   </head>
+
   <body>
-    <a-scene>
-      <!-- Assets -->
-      <a-assets>
-        <img id="scene1" src="assets/scene1.jpg">
-        <img id="scene2" src="assets/scene2.jpg">
-        <img id="scene3A" src="assets/scene3A.jpg">
-        <img id="scene3B" src="assets/scene3B.jpg">
-        <img id="videoThumb" src="assets/video_thumbnail.jpg">
-        <audio id="audioIntro" src="assets/audio_intro.mp3"></audio>
-        <audio id="audioScene2" src="assets/audio_scene2.mp3"></audio>
-        <audio id="audioQuiz" src="assets/audio_quiz.mp3"></audio>
-        <audio id="audioScene3A" src="assets/audio_scene3A.mp3"></audio>
-        <audio id="audioScene3B" src="assets/audio_scene3B.mp3"></audio>
-        <video id="video" src="assets/video.mp4" crossorigin="anonymous"></video>
+    <!-- ====== LOADING OVERLAY ====== -->
+    <div id="loadingScreen">
+      <div class="loader"></div>
+      <p style="color:white;margin-top:20px;">Loading...</p>
+    </div>
+
+    <!-- ====== MAIN SCENE ====== -->
+    <a-scene background="color: black" loading-screen="enabled: false">
+
+      <!-- ====== ASSETS ====== -->
+      <a-assets timeout="10000" id="assetLoader">
+        <!-- Scene 1 -->
+        <img id="scene1-img" src="assets/scene1.jpg">
+        <audio id="scene1-audio" src="assets/scene1_intro.mp3"></audio>
+
+        <!-- Scene 2 -->
+        <img id="scene2-img" src="assets/scene2.jpg">
+        <audio id="scene2-audio" src="assets/scene2_intro.mp3"></audio>
+        <img id="video-thumb" src="assets/video_thumb.jpg">
+        <video id="scene2-video" src="assets/scene2_video.mp4" crossorigin="anonymous"></video>
+        <audio id="quiz-audio" src="assets/quiz_audio.mp3"></audio>
+
+        <!-- Scene 3A -->
+        <img id="scene3a-img" src="assets/scene3a.jpg">
+        <audio id="scene3a-audio" src="assets/scene3a_audio.mp3"></audio>
+
+        <!-- Scene 3B -->
+        <img id="scene3b-img" src="assets/scene3b.jpg">
+        <audio id="scene3b-audio" src="assets/scene3b_audio.mp3"></audio>
+
+        <!-- Click sound -->
+        <audio id="click-sound" src="assets/click.mp3"></audio>
       </a-assets>
 
-      <!-- Sky -->
-      <a-sky id="sky" src="#scene1"></a-sky>
-
-      <!-- Camera + Cursor -->
-      <a-entity id="rig">
-        <a-entity camera look-controls position="0 1.6 0">
-          <a-entity
-            cursor="fuse: true; fuseTimeout: 1500"
-            position="0 0 -1"
-            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
-            material="color: white; shader: flat">
-          </a-entity>
+      <!-- ====== CAMERA & CURSOR ====== -->
+      <a-entity camera look-controls>
+        <a-entity 
+          cursor="fuse: true; fuseTimeout: 1500"
+          position="0 0 -1"
+          geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+          material="color: white; shader: flat"
+          raycaster="objects: .clickable">
         </a-entity>
       </a-entity>
 
-      <a-entity id="ui"></a-entity>
+      <!-- ====== SCENE ELEMENTS ====== -->
+      <!-- Background -->
+      <a-sky id="sky" src=""></a-sky>
+
+      <!-- Buttons / interactive objects (initially hidden) -->
+      <a-plane id="enterBtn" class="clickable" position="-1 0 -3" width="1" height="0.5" 
+               color="green" visible="false" text="value: ENTER; align: center"></a-plane>
+
+      <a-plane id="videoThumb" class="clickable" position="1 0 -3" width="1.5" height="1" 
+               src="#video-thumb" visible="false"></a-plane>
+
+      <!-- Quiz buttons -->
+      <a-plane id="yesBtn" class="clickable" position="-1 0 -3" width="1" height="0.5" 
+               color="blue" visible="false" text="value: YES; align: center"></a-plane>
+      <a-plane id="noBtn" class="clickable" position="1 0 -3" width="1" height="0.5" 
+               color="red" visible="false" text="value: NO; align: center"></a-plane>
+
+      <!-- Video player -->
+      <a-video id="videoPlayer" src="#scene2-video" position="0 1.5 -4" width="4" height="2.25" visible="false"></a-video>
+
     </a-scene>
 
+    <!-- ====== SCRIPT LOGIC ====== -->
     <script>
-      const sky = document.querySelector('#sky');
-      const ui = document.querySelector('#ui');
+      // GLOBAL VARIABLES
+      let currentScene = 0;
 
-      let currentAudio = null;
-      let video = document.querySelector('#video');
+      // Wait for assets to load
+      document.querySelector('#assetLoader').addEventListener('loaded', () => {
+        document.getElementById('loadingScreen').style.display = 'none';
+        document.getElementById('enterBtn').setAttribute('visible', true);
+      });
 
-      function stopAudio() {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.currentTime = 0;
-          currentAudio = null;
-        }
-      }
-
+      // Utility: play audio
       function playAudio(id) {
-        stopAudio();
-        currentAudio = document.querySelector(id);
-        currentAudio.play();
+        let audioEl = document.getElementById(id);
+        audioEl.currentTime = 0;
+        audioEl.play();
       }
 
-      function clearUI() {
-        while (ui.firstChild) {
-          ui.removeChild(ui.firstChild);
-        }
+      // Utility: stop all audio
+      function stopAllAudio() {
+        document.querySelectorAll('audio').forEach(a => { a.pause(); a.currentTime = 0; });
       }
 
-      function createButton(text, eventName, pos) {
-        const btn = document.createElement('a-entity');
-        btn.setAttribute('geometry', 'primitive: plane; height: 0.3; width: 1');
-        btn.setAttribute('material', 'color: #FF5733; opacity: 0.8');
-        btn.setAttribute('text', `value:${text}; align:center; color:white; width:4`);
-        btn.setAttribute('position', pos);
-        btn.setAttribute('click-action', `action:${eventName}`);
-        ui.appendChild(btn);
+      // ===== SCENE FUNCTIONS =====
+      function startScene1() {
+        currentScene = 1;
+        document.getElementById('enterBtn').setAttribute('visible', false);
+        document.getElementById('sky').setAttribute('src', '#scene1-img');
+        playAudio('scene1-audio');
+
+        // Show button for moving to Scene 2 after audio
+        setTimeout(() => {
+          document.getElementById('videoThumb').setAttribute('visible', true);
+        }, 4000);
       }
 
-      function scene1() {
-        clearUI();
-        sky.setAttribute('src', '#scene1');
-        playAudio('#audioIntro');
-        createButton('Enter', 'gotoScene2', '0 1.6 -2');
+      function startScene2() {
+        currentScene = 2;
+        stopAllAudio();
+        document.getElementById('sky').setAttribute('src', '#scene2-img');
+        document.getElementById('videoThumb').setAttribute('visible', true);
+        playAudio('scene2-audio');
       }
 
-      function scene2() {
-        clearUI();
-        sky.setAttribute('src', '#scene2');
-        playAudio('#audioScene2');
+      function playVideo() {
+        stopAllAudio();
+        document.getElementById('videoThumb').setAttribute('visible', false);
+        let vid = document.getElementById('scene2-video');
+        document.getElementById('videoPlayer').setAttribute('visible', true);
+        vid.play();
 
-        const thumb = document.createElement('a-image');
-        thumb.setAttribute('src', '#videoThumb');
-        thumb.setAttribute('width', '2');
-        thumb.setAttribute('height', '1');
-        thumb.setAttribute('position', '0 1.6 -3');
-        thumb.setAttribute('click-action', 'playVideo');
-        ui.appendChild(thumb);
+        vid.onended = () => {
+          document.getElementById('yesBtn').setAttribute('visible', true);
+          document.getElementById('noBtn').setAttribute('visible', true);
+          playAudio('quiz-audio');
+        };
       }
 
-      function playVideoScene() {
-        clearUI();
-        stopAudio();
-        const vidScreen = document.createElement('a-video');
-        vidScreen.setAttribute('src', '#video');
-        vidScreen.setAttribute('width', '4');
-        vidScreen.setAttribute('height', '2');
-        vidScreen.setAttribute('position', '0 1.6 -3');
-        ui.appendChild(vidScreen);
-        video.play();
-        video.onended = quizScene;
+      function startScene3A() {
+        stopAllAudio();
+        currentScene = '3A';
+        document.getElementById('sky').setAttribute('src', '#scene3a-img');
+        hideAllButtons();
+        playAudio('scene3a-audio');
       }
 
-      function quizScene() {
-        clearUI();
-        playAudio('#audioQuiz');
-        createButton('Yes', 'gotoScene3A', '-1 1.6 -2');
-        createButton('No', 'gotoScene3B', '1 1.6 -2');
+      function startScene3B() {
+        stopAllAudio();
+        currentScene = '3B';
+        document.getElementById('sky').setAttribute('src', '#scene3b-img');
+        hideAllButtons();
+        playAudio('scene3b-audio');
       }
 
-      function scene3A() {
-        clearUI();
-        sky.setAttribute('src', '#scene3A');
-        playAudio('#audioScene3A');
+      function hideAllButtons() {
+        ['enterBtn','videoThumb','yesBtn','noBtn'].forEach(id=>{
+          document.getElementById(id).setAttribute('visible', false);
+        });
+        document.getElementById('videoPlayer').setAttribute('visible', false);
       }
 
-      function scene3B() {
-        clearUI();
-        sky.setAttribute('src', '#scene3B');
-        playAudio('#audioScene3B');
-      }
+      // ====== INTERACTIONS ======
+      document.getElementById('enterBtn').addEventListener('click', () => {
+        playAudio('click-sound');
+        startScene1();
+      });
 
-      document.querySelector('a-scene').addEventListener('gotoScene2', scene2);
-      document.querySelector('a-scene').addEventListener('playVideo', playVideoScene);
-      document.querySelector('a-scene').addEventListener('gotoScene3A', scene3A);
-      document.querySelector('a-scene').addEventListener('gotoScene3B', scene3B);
+      document.getElementById('videoThumb').addEventListener('click', () => {
+        playAudio('click-sound');
+        playVideo();
+      });
 
-      scene1();
+      document.getElementById('yesBtn').addEventListener('click', () => {
+        playAudio('click-sound');
+        startScene3A();
+      });
+
+      document.getElementById('noBtn').addEventListener('click', () => {
+        playAudio('click-sound');
+        startScene3B();
+      });
     </script>
   </body>
 </html>
