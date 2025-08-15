@@ -1,60 +1,14 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
     <meta charset="UTF-8">
-    <title>Minimal VR Scenes</title>
+    <title>A-Frame Minimal Test</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <style>
-      body { margin: 0; background: #000 }
-    </style>
   </head>
   <body>
     <a-scene>
-      <a-assets>
-        <img id="img1" src="https://cdn.aframe.io/360-image-gallery-boilerplate/img/sechelt.jpg">
-        <img id="img2" src="assets/scene2.jpg">
-        <img id="img3" src="assets/scene3A.jpg">
-      </a-assets>
-      <!-- Scene backgrounds -->
-      <a-sky id="sky" src="#img1"></a-sky>
-      <!-- Buttons -->
-      <a-entity id="nextBtn" position="0 1.2 -1.5">
-        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
-        <a-text value="Next" color="#222" position="0 0 0.05" align="center"></a-text>
-      </a-entity>
-      <a-entity id="backBtn" position="-0.7 1.2 -1.5" visible="false">
-        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
-        <a-text value="Back" color="#222" position="0 0 0.05" align="center"></a-text>
-      </a-entity>
-      <a-entity camera look-controls position="0 1.6 0">
-        <a-cursor fuse="true" fuse-timeout="1200" color="#333"></a-cursor>
-      </a-entity>
-      <script>
-        let sceneNum = 1;
-        const sky = document.getElementById('sky');
-        const nextBtn = document.getElementById('nextBtn');
-        const backBtn = document.getElementById('backBtn');
-        nextBtn.addEventListener('click', () => {
-          if (sceneNum === 1) {
-            sky.setAttribute('src', '#img2');
-            sceneNum = 2;
-            backBtn.setAttribute('visible', true);
-          } else if (sceneNum === 2) {
-            sky.setAttribute('src', '#img3');
-            sceneNum = 3;
-          }
-        });
-        backBtn.addEventListener('click', () => {
-          if (sceneNum === 2) {
-            sky.setAttribute('src', '#img1');
-            sceneNum = 1;
-            backBtn.setAttribute('visible', false);
-          } else if (sceneNum === 3) {
-            sky.setAttribute('src', '#img2');
-            sceneNum = 2;
-          }
-        });
-      </script>
+      <a-sky color="#222"></a-sky>
+      <a-entity camera></a-entity>
     </a-scene>
   </body>
 </html>
