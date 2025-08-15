@@ -1,12 +1,16 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <meta charset="utf-8">
     <meta charset="utf-8" />
     <title>VR Experience</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/ngokevin/kframe@master/components/event-set/dist/aframe-event-set-component.min.js"></script>
   </head>
   <body>
+    <a-scene vr-mode-ui="enabled: true">
     <a-scene cursor="rayOrigin: mouse" raycaster="objects: .clickable">
       <!-- Camera + Cursor (supports Google Cardboard gaze + tap) -->
       <a-entity id="cameraRig">
@@ -25,6 +29,12 @@
 
       <!-- Assets -->
       <a-assets>
+        <img id="scene1" src="assets/scene1.jpg">
+        <img id="scene2" src="assets/scene2.jpg">
+        <img id="videoThumb" src="assets/video_thumbnail.jpg">
+
+        <video id="videoFile" src="assets/video.mp4" preload="auto" crossorigin="anonymous"></video>
+
         <!-- Images -->
         <img id="scene1Img" src="assets/scene1.jpg" />
         <img id="scene2Img" src="assets/scene2.jpg" />
@@ -51,17 +61,44 @@
         ></video>
       </a-assets>
 
+      <!-- Sky -->
+      <a-sky id="sky" src="#scene1"></a-sky>
+
+      <!-- Camera with gaze + click -->
+      <a-entity id="rig">
+        <a-camera>
+          <a-cursor 
+            fuse="true" 
+            fuse-timeout="1500"
+            material="color: white; shader: flat"
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03">
+          </a-cursor>
+        </a-camera>
+      </a-entity>
+
+      <!-- Enter Button (Scene 1) -->
+      <a-entity id="enterButton" class="clickable"
+        geometry="primitive: plane; height: 0.5; width: 1"
+        material="color: #4CAF50"
+        position="0 -1.5 -3"
       <!-- Scene 1 Button -->
       <a-entity
         id="enterBtn"
         geometry="primitive: plane; height: 0.5; width: 1.5"
         material="color: blue"
         text="value: Enter; align: center; color: white"
+        event-set__mouseenter="scale: 1.2 1.2 1"
+        event-set__mouseleave="scale: 1 1 1">
+      </a-entity>
         position="0 1.6 -3"
         class="clickable"
       ></a-entity>
 
       <!-- Video Thumbnail (Scene 2) -->
+      <a-entity id="videoThumbnail" class="clickable"
+        geometry="primitive: plane; height: 1; width: 1.78"
+        material="src: #videoThumb"
+        position="0 0 -3"
       <a-plane
         id="videoThumbPlane"
         src="#videoThumb"
@@ -69,10 +106,14 @@
         width="1.78"
         position="0 1.6 -3"
         visible="false"
+        event-set__mouseenter="scale: 1.05 1.05 1"
+        event-set__mouseleave="scale: 1 1 1">
+      </a-entity>
         class="clickable"
       ></a-plane>
 
       <!-- Video Screen -->
+      <a-video id="videoScreen" src="#videoFile" width="4" height="2.25" position="0 0 -4" visible="false"></a-video>
       <a-video
         id="videoScreen"
         src="#video"
@@ -105,6 +146,14 @@
     </a-scene>
 
     <script>
+      let currentAudio = null;
+
+      function playAudio(id) {
+        stopCurrentAudio();
+        const audio = document.querySelector(id);
+        audio.currentTime = 0;
+        audio.play();
+        currentAudio = audio;
       const sky = document.getElementById("sky");
 
       // Buttons
@@ -132,6 +181,12 @@
         );
       }
 
+      function stopCurrentAudio() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          currentAudio = null;
+        }
       // Scene 1
       function startScene1() {
         sky.setAttribute("src", "#scene1Img");
@@ -140,6 +195,10 @@
         audioIntro.play();
       }
 
+      // Scene 1: Start audio
+      window.addEventListener('load', () => {
+        playAudio('#audioIntro');
+      });
       // Scene 2
       function startScene2() {
         sky.setAttribute("src", "#scene2Img");
@@ -149,6 +208,17 @@
         audioScene2.play();
       }
 
+      // Enter Button → Scene 2
+      const enterButton = document.querySelector('#enterButton');
+      enterButton.addEventListener('click', goToScene2);
+      enterButton.addEventListener('touchstart', goToScene2); // mobile tap
+
+      function goToScene2() {
+        stopCurrentAudio();
+        document.querySelector('#sky').setAttribute('src', '#scene2');
+        document.querySelector('#enterButton').setAttribute('visible', false);
+        document.querySelector('#videoThumbnail').setAttribute('visible', true);
+        playAudio('#audioScene2');
       // Scene 3A
       function startScene3A() {
         sky.setAttribute("src", "#scene3AImg");
@@ -158,6 +228,18 @@
         audioScene3A.play();
       }
 
+      // Video Thumbnail → Play video
+      const videoThumbnail = document.querySelector('#videoThumbnail');
+      videoThumbnail.addEventListener('click', playVideo);
+      videoThumbnail.addEventListener('touchstart', playVideo);
+
+      function playVideo() {
+        stopCurrentAudio();
+        document.querySelector('#videoThumbnail').setAttribute('visible', false);
+        const videoScreen = document.querySelector('#videoScreen');
+        videoScreen.setAttribute('visible', true);
+        const videoFile = document.querySelector('#videoFile');
+        videoFile.play();
       // Scene 3B
       function startScene3B() {
         sky.setAttribute("src", "#scene3BImg");
