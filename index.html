@@ -1,14 +1,173 @@
+@@ -1,142 +1,58 @@
+<!--
+A-Frame Simple VR Scene Switcher
+- 3 scenes, each with a 360° image.
+- Each scene has a "Next" button (gaze or tap to proceed).
+- Scenes 2 and 3 have a "Back" button (gaze or tap to go back).
+- All images must be in /assets: scene1.jpg, scene2.jpg, scene3.jpg
+
+Instructions:
+- Place this file and your images in the same directory.
+- Open in mobile browser (Google Cardboard compatible).
+-->
+
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>A-Frame Minimal Test</title>
+    <title>Simple VR 3 Scenes (A-Frame)</title>
+    <title>Minimal VR Scenes</title>
     <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <style>
+      body { margin: 0; background: #000 }
+    </style>
   </head>
   <body>
+    <a-scene embedded>
+      <!-- Assets -->
     <a-scene>
-      <a-sky color="#222"></a-sky>
-      <a-entity camera></a-entity>
+      <a-assets>
+        <img id="img1" src="assets/scene1.jpg">
+        <img id="img2" src="assets/scene2.jpg">
+        <img id="img3" src="assets/scene3A.jpg">
+      </a-assets>
+
+      <!-- Scene 1: image + Next button -->
+      <a-sky id="sky1" src="#img1" visible="true"></a-sky>
+      <a-entity id="btn1-entity" visible="true" position="0 1.2 -1.5">
+        <a-plane id="btn1"
+          color="#fff"
+          width="0.5" height="0.2"
+          material="shader: flat; transparent: true; opacity: 0.9"
+        ></a-plane>
+        <a-text value="Next"
+          align="center" color="#222"
+          position="0 0 0.05" width="1.2"
+        ></a-text>
+      <!-- Scene backgrounds -->
+      <a-sky id="sky" src="#img1"></a-sky>
+      <!-- Buttons -->
+      <a-entity id="nextBtn" position="0 1.2 -1.5">
+        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
+        <a-text value="Next" color="#222" position="0 0 0.05" align="center"></a-text>
+      </a-entity>
+
+      <!-- Scene 2: image + Next + Back button -->
+      <a-sky id="sky2" src="#img2" visible="false"></a-sky>
+      <a-entity id="btn2-entity" visible="false" position="0.4 1.2 -1.5">
+        <a-plane id="btn2"
+          color="#fff"
+          width="0.5" height="0.2"
+          material="shader: flat; transparent: true; opacity: 0.9"
+        ></a-plane>
+        <a-text value="Next"
+          align="center" color="#222"
+          position="0 0 0.05" width="1.2"
+        ></a-text>
+      <a-entity id="backBtn" position="-0.7 1.2 -1.5" visible="false">
+        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
+        <a-text value="Back" color="#222" position="0 0 0.05" align="center"></a-text>
+      </a-entity>
+      <a-entity id="back2-entity" visible="false" position="-0.4 1.2 -1.5">
+        <a-plane id="back2"
+          color="#fff"
+          width="0.5" height="0.2"
+          material="shader: flat; transparent: true; opacity: 0.9"
+        ></a-plane>
+        <a-text value="Back"
+          align="center" color="#222"
+          position="0 0 0.05" width="1.2"
+        ></a-text>
+      </a-entity>
+
+      <!-- Scene 3: image + Back button -->
+      <a-sky id="sky3" src="#img3" visible="false"></a-sky>
+      <a-entity id="back3-entity" visible="false" position="-0.4 1.2 -1.5">
+        <a-plane id="back3"
+          color="#fff"
+          width="0.5" height="0.2"
+          material="shader: flat; transparent: true; opacity: 0.9"
+        ></a-plane>
+        <a-text value="Back"
+          align="center" color="#222"
+          position="0 0 0.05" width="1.2"
+        ></a-text>
+      </a-entity>
+
+      <!-- Camera & Cursor for gaze/tap -->
+      <a-entity camera look-controls position="0 1.6 0">
+        <a-cursor fuse="true" fuse-timeout="1200" color="#333"></a-cursor>
+      </a-entity>
+
+      <!-- JS Scene Logic -->
+      <script>
+        // Helper for showing/hiding scenes and buttons
+        function showScene(sceneNum) {
+          // Hide all skies and buttons
+          document.querySelector('#sky1').setAttribute('visible', false);
+          document.querySelector('#sky2').setAttribute('visible', false);
+          document.querySelector('#sky3').setAttribute('visible', false);
+          document.querySelector('#btn1-entity').setAttribute('visible', false);
+          document.querySelector('#btn2-entity').setAttribute('visible', false);
+          document.querySelector('#back2-entity').setAttribute('visible', false);
+          document.querySelector('#back3-entity').setAttribute('visible', false);
+
+        let sceneNum = 1;
+        const sky = document.getElementById('sky');
+        const nextBtn = document.getElementById('nextBtn');
+        const backBtn = document.getElementById('backBtn');
+        nextBtn.addEventListener('click', () => {
+          if (sceneNum === 1) {
+            document.querySelector('#sky1').setAttribute('visible', true);
+            document.querySelector('#btn1-entity').setAttribute('visible', true);
+            sky.setAttribute('src', '#img2');
+            sceneNum = 2;
+            backBtn.setAttribute('visible', true);
+          } else if (sceneNum === 2) {
+            sky.setAttribute('src', '#img3');
+            sceneNum = 3;
+          }
+        });
+        backBtn.addEventListener('click', () => {
+          if (sceneNum === 2) {
+            document.querySelector('#sky2').setAttribute('visible', true);
+            document.querySelector('#btn2-entity').setAttribute('visible', true);
+            document.querySelector('#back2-entity').setAttribute('visible', true);
+          }
+          if (sceneNum === 3) {
+            document.querySelector('#sky3').setAttribute('visible', true);
+            document.querySelector('#back3-entity').setAttribute('visible', true);
+            sky.setAttribute('src', '#img1');
+            sceneNum = 1;
+            backBtn.setAttribute('visible', false);
+          } else if (sceneNum === 3) {
+            sky.setAttribute('src', '#img2');
+            sceneNum = 2;
+          }
+        }
+
+        // Start at scene 1
+        let sceneNum = 1;
+
+        // Next button 1 → Scene 2
+        document.querySelector('#btn1-entity').addEventListener('click', () => {
+          sceneNum = 2;
+          showScene(sceneNum);
+        });
+        // Next button 2 → Scene 3
+        document.querySelector('#btn2-entity').addEventListener('click', () => {
+          sceneNum = 3;
+          showScene(sceneNum);
+        });
+        // Back button 2 → Scene 1
+        document.querySelector('#back2-entity').addEventListener('click', () => {
+          sceneNum = 1;
+          showScene(sceneNum);
+        });
+        // Back button 3 → Scene 2
+        document.querySelector('#back3-entity').addEventListener('click', () => {
+          sceneNum = 2;
+          showScene(sceneNum);
+        });
+      </script>
     </a-scene>
-  </body>
-</html>
