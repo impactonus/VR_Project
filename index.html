@@ -1,1 +1,163 @@
-<!DOCTYPE html> <html> <head> <meta charset="utf-8"> <title>VR Scene Flow</title> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script> <script src="https://unpkg.com/aframe-event-set-component/dist/aframe-event-set-component.min.js"></script> <script src="https://unpkg.com/aframe-layout-component/dist/aframe-layout-component.min.js"></script> <script> AFRAME.registerComponent('click-action', { schema: {action: {type: 'string'}}, init: function () { const el = this.el; const action = this.data.action; const trigger = () => { el.sceneEl.emit(action); }; el.addEventListener('click', trigger); el.addEventListener('mouseenter', () => { this.timeout = setTimeout(trigger, 1500); // 1.5s gaze }); el.addEventListener('mouseleave', () => { clearTimeout(this.timeout); }); } }); </script> </head> <body> <a-scene> <!-- Assets --> <a-assets> <img id="scene1" src="assets/scene1.jpg"> <img id="scene2" src="assets/scene2.jpg"> <img id="scene3A" src="assets/scene3A.jpg"> <img id="scene3B" src="assets/scene3B.jpg"> <img id="videoThumb" src="assets/video_thumbnail.jpg"> <audio id="audioIntro" src="assets/audio_intro.mp3"></audio> <audio id="audioScene2" src="assets/audio_scene2.mp3"></audio> <audio id="audioQuiz" src="assets/audio_quiz.mp3"></audio> <audio id="audioScene3A" src="assets/audio_scene3A.mp3"></audio> <audio id="audioScene3B" src="assets/audio_scene3B.mp3"></audio> <video id="video" src="assets/video.mp4" crossorigin="anonymous"></video> </a-assets> <!-- Sky --> <a-sky id="sky" src="#scene1"></a-sky> <!-- Camera + Cursor --> <a-entity id="rig"> <a-entity camera look-controls position="0 1.6 0"> <a-entity cursor="fuse: true; fuseTimeout: 1500" position="0 0 -1" geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03" material="color: white; shader: flat"> </a-entity> </a-entity> </a-entity> <a-entity id="ui"></a-entity> </a-scene> <script> const sky = document.querySelector('#sky'); const ui = document.querySelector('#ui'); let currentAudio = null; let video = document.querySelector('#video'); function stopAudio() { if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; } } function playAudio(id) { stopAudio(); currentAudio = document.querySelector(id); currentAudio.play(); } function clearUI() { while (ui.firstChild) { ui.removeChild(ui.firstChild); } } function createButton(text, eventName, pos) { const btn = document.createElement('a-entity'); btn.setAttribute('geometry', 'primitive: plane; height: 0.3; width: 1'); btn.setAttribute('material', 'color: #FF5733; opacity: 0.8'); btn.setAttribute('text', value:${text}; align:center; color:white; width:4); btn.setAttribute('position', pos); btn.setAttribute('click-action', action:${eventName}); ui.appendChild(btn); } function scene1() { clearUI(); sky.setAttribute('src', '#scene1'); playAudio('#audioIntro'); createButton('Enter', 'gotoScene2', '0 1.6 -2'); } function scene2() { clearUI(); sky.setAttribute('src', '#scene2'); playAudio('#audioScene2'); const thumb = document.createElement('a-image'); thumb.setAttribute('src', '#videoThumb'); thumb.setAttribute('width', '2'); thumb.setAttribute('height', '1'); thumb.setAttribute('position', '0 1.6 -3'); thumb.setAttribute('click-action', 'playVideo'); ui.appendChild(thumb); } function playVideoScene() { clearUI(); stopAudio(); const vidScreen = document.createElement('a-video'); vidScreen.setAttribute('src', '#video'); vidScreen.setAttribute('width', '4'); vidScreen.setAttribute('height', '2'); vidScreen.setAttribute('position', '0 1.6 -3'); ui.appendChild(vidScreen); video.play(); video.onended = quizScene; } function quizScene() { clearUI(); playAudio('#audioQuiz'); createButton('Yes', 'gotoScene3A', '-1 1.6 -2'); createButton('No', 'gotoScene3B', '1 1.6 -2'); } function scene3A() { clearUI(); sky.setAttribute('src', '#scene3A'); playAudio('#audioScene3A'); } function scene3B() { clearUI(); sky.setAttribute('src', '#scene3B'); playAudio('#audioScene3B'); } document.querySelector('a-scene').addEventListener('gotoScene2', scene2); document.querySelector('a-scene').addEventListener('playVideo', playVideoScene); document.querySelector('a-scene').addEventListener('gotoScene3A', scene3A); document.querySelector('a-scene').addEventListener('gotoScene3B', scene3B); scene1(); </script> </body> </html>
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>VR Scene Flow</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://unpkg.com/aframe-event-set-component/dist/aframe-event-set-component.min.js"></script>
+    <script src="https://unpkg.com/aframe-layout-component/dist/aframe-layout-component.min.js"></script>
+    <script>
+      AFRAME.registerComponent('click-action', {
+        schema: {action: {type: 'string'}},
+        init: function () {
+          const el = this.el;
+          const action = this.data.action;
+          const trigger = () => {
+            el.sceneEl.emit(action);
+          };
+          el.addEventListener('click', trigger);
+          el.addEventListener('mouseenter', () => {
+            this.timeout = setTimeout(trigger, 1500); // 1.5s gaze
+          });
+          el.addEventListener('mouseleave', () => {
+            clearTimeout(this.timeout);
+          });
+        }
+      });
+    </script>
+  </head>
+  <body>
+    <a-scene>
+      <!-- Assets -->
+      <a-assets>
+        <img id="scene1" src="assets/scene1.jpg">
+        <img id="scene2" src="assets/scene2.jpg">
+        <img id="scene3A" src="assets/scene3A.jpg">
+        <img id="scene3B" src="assets/scene3B.jpg">
+        <img id="videoThumb" src="assets/video_thumbnail.jpg">
+        <audio id="audioIntro" src="assets/audio_intro.mp3"></audio>
+        <audio id="audioScene2" src="assets/audio_scene2.mp3"></audio>
+        <audio id="audioQuiz" src="assets/audio_quiz.mp3"></audio>
+        <audio id="audioScene3A" src="assets/audio_scene3A.mp3"></audio>
+        <audio id="audioScene3B" src="assets/audio_scene3B.mp3"></audio>
+        <video id="video" src="assets/video.mp4" crossorigin="anonymous"></video>
+      </a-assets>
+
+      <!-- Sky -->
+      <a-sky id="sky" src="#scene1"></a-sky>
+
+      <!-- Camera + Cursor -->
+      <a-entity id="rig">
+        <a-entity camera look-controls position="0 1.6 0">
+          <a-entity
+            cursor="fuse: true; fuseTimeout: 1500"
+            position="0 0 -1"
+            geometry="primitive: ring; radiusInner: 0.02; radiusOuter: 0.03"
+            material="color: white; shader: flat">
+          </a-entity>
+        </a-entity>
+      </a-entity>
+
+      <a-entity id="ui"></a-entity>
+    </a-scene>
+
+    <script>
+      const sky = document.querySelector('#sky');
+      const ui = document.querySelector('#ui');
+
+      let currentAudio = null;
+      let video = document.querySelector('#video');
+
+      function stopAudio() {
+        if (currentAudio) {
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+          currentAudio = null;
+        }
+      }
+
+      function playAudio(id) {
+        stopAudio();
+        currentAudio = document.querySelector(id);
+        currentAudio.play();
+      }
+
+      function clearUI() {
+        while (ui.firstChild) {
+          ui.removeChild(ui.firstChild);
+        }
+      }
+
+      function createButton(text, eventName, pos) {
+        const btn = document.createElement('a-entity');
+        btn.setAttribute('geometry', 'primitive: plane; height: 0.3; width: 1');
+        btn.setAttribute('material', 'color: #FF5733; opacity: 0.8');
+        btn.setAttribute('text', `value:${text}; align:center; color:white; width:4`);
+        btn.setAttribute('position', pos);
+        btn.setAttribute('click-action', `action:${eventName}`);
+        ui.appendChild(btn);
+      }
+
+      function scene1() {
+        clearUI();
+        sky.setAttribute('src', '#scene1');
+        playAudio('#audioIntro');
+        createButton('Enter', 'gotoScene2', '0 1.6 -2');
+      }
+
+      function scene2() {
+        clearUI();
+        sky.setAttribute('src', '#scene2');
+        playAudio('#audioScene2');
+
+        const thumb = document.createElement('a-image');
+        thumb.setAttribute('src', '#videoThumb');
+        thumb.setAttribute('width', '2');
+        thumb.setAttribute('height', '1');
+        thumb.setAttribute('position', '0 1.6 -3');
+        thumb.setAttribute('click-action', 'playVideo');
+        ui.appendChild(thumb);
+      }
+
+      function playVideoScene() {
+        clearUI();
+        stopAudio();
+        const vidScreen = document.createElement('a-video');
+        vidScreen.setAttribute('src', '#video');
+        vidScreen.setAttribute('width', '4');
+        vidScreen.setAttribute('height', '2');
+        vidScreen.setAttribute('position', '0 1.6 -3');
+        ui.appendChild(vidScreen);
+        video.play();
+        video.onended = quizScene;
+      }
+
+      function quizScene() {
+        clearUI();
+        playAudio('#audioQuiz');
+        createButton('Yes', 'gotoScene3A', '-1 1.6 -2');
+        createButton('No', 'gotoScene3B', '1 1.6 -2');
+      }
+
+      function scene3A() {
+        clearUI();
+        sky.setAttribute('src', '#scene3A');
+        playAudio('#audioScene3A');
+      }
+
+      function scene3B() {
+        clearUI();
+        sky.setAttribute('src', '#scene3B');
+        playAudio('#audioScene3B');
+      }
+
+      document.querySelector('a-scene').addEventListener('gotoScene2', scene2);
+      document.querySelector('a-scene').addEventListener('playVideo', playVideoScene);
+      document.querySelector('a-scene').addEventListener('gotoScene3A', scene3A);
+      document.querySelector('a-scene').addEventListener('gotoScene3B', scene3B);
+
+      scene1();
+    </script>
+  </body>
+</html>
