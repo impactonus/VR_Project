@@ -1,173 +1,355 @@
-@@ -1,142 +1,58 @@
-<!--
-A-Frame Simple VR Scene Switcher
-- 3 scenes, each with a 360° image.
-- Each scene has a "Next" button (gaze or tap to proceed).
-- Scenes 2 and 3 have a "Back" button (gaze or tap to go back).
-- All images must be in /assets: scene1.jpg, scene2.jpg, scene3.jpg
-
-Instructions:
-- Place this file and your images in the same directory.
-- Open in mobile browser (Google Cardboard compatible).
--->
-
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>Simple VR 3 Scenes (A-Frame)</title>
-    <title>Minimal VR Scenes</title>
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <style>
-      body { margin: 0; background: #000 }
-    </style>
-  </head>
-  <body>
-    <a-scene embedded>
-      <!-- Assets -->
-    <a-scene>
-      <a-assets>
-        <img id="img1" src="assets/scene1.jpg">
-        <img id="img2" src="assets/scene2.jpg">
-        <img id="img3" src="assets/scene3A.jpg">
-      </a-assets>
+<html lang="hi">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VR Flow (GH-ready v3.4)</title>
+  <link rel="icon" href="data:,">
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'NotoDev';
+      src: url('NotoSansDevanagari-Regular.ttf') format('truetype');
+      font-display: swap;
+    }
+    html, body { height:100%; margin:0; background:#fff; }
+    #boot, #gate {
+      position: fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background:#fff; color:#000; z-index:99998; flex-direction:column;
+      font: 18px/1.5 "NotoDev", system-ui, Arial, sans-serif;
+    }
+    #gate { display:none; background: rgba(255,255,255,0.98); }
+    #gate button {
+      margin-top: 10px; padding:10px 16px; border-radius:10px; border:0; cursor:pointer;
+      background:#111; color:#fff; font:inherit;
+    }
+    #boot .spinner {
+      width:44px;height:44px;border-radius:50%;
+      border:4px solid #ddd;border-top-color:#333; animation:spin 1s linear infinite; margin-bottom:12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #versionTag { position: fixed; top: 6px; left: 10px; z-index: 9; font: 12px/1 monospace; color:#0a0; opacity:.8; }
+  </style>
 
-      <!-- Scene 1: image + Next button -->
-      <a-sky id="sky1" src="#img1" visible="true"></a-sky>
-      <a-entity id="btn1-entity" visible="true" position="0 1.2 -1.5">
-        <a-plane id="btn1"
-          color="#fff"
-          width="0.5" height="0.2"
-          material="shader: flat; transparent: true; opacity: 0.9"
-        ></a-plane>
-        <a-text value="Next"
-          align="center" color="#222"
-          position="0 0 0.05" width="1.2"
-        ></a-text>
-      <!-- Scene backgrounds -->
-      <a-sky id="sky" src="#img1"></a-sky>
-      <!-- Buttons -->
-      <a-entity id="nextBtn" position="0 1.2 -1.5">
-        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
-        <a-text value="Next" color="#222" position="0 0 0.05" align="center"></a-text>
-      </a-entity>
+  <script>
+    /* ---------- face-camera ---------- */
+    AFRAME.registerComponent('face-camera', {
+      schema:{onlyY:{type:'boolean',default:true}},
+      init(){ this.cam=document.querySelector('#camera'); this.tmp1=new THREE.Vector3(); this.tmp2=new THREE.Vector3(); },
+      tick(){
+        if(!this.cam) return;
+        const obj=this.el.object3D;
+        this.cam.object3D.getWorldPosition(this.tmp1);
+        obj.getWorldPosition(this.tmp2);
+        if(this.data.onlyY){ const t=this.tmp1.clone(); t.y=this.tmp2.y; obj.lookAt(t); }
+        else obj.lookAt(this.tmp1);
+      }
+    });
 
-      <!-- Scene 2: image + Next + Back button -->
-      <a-sky id="sky2" src="#img2" visible="false"></a-sky>
-      <a-entity id="btn2-entity" visible="false" position="0.4 1.2 -1.5">
-        <a-plane id="btn2"
-          color="#fff"
-          width="0.5" height="0.2"
-          material="shader: flat; transparent: true; opacity: 0.9"
-        ></a-plane>
-        <a-text value="Next"
-          align="center" color="#222"
-          position="0 0 0.05" width="1.2"
-        ></a-text>
-      <a-entity id="backBtn" position="-0.7 1.2 -1.5" visible="false">
-        <a-plane color="#fff" width="0.5" height="0.2"></a-plane>
-        <a-text value="Back" color="#222" position="0 0 0.05" align="center"></a-text>
-      </a-entity>
-      <a-entity id="back2-entity" visible="false" position="-0.4 1.2 -1.5">
-        <a-plane id="back2"
-          color="#fff"
-          width="0.5" height="0.2"
-          material="shader: flat; transparent: true; opacity: 0.9"
-        ></a-plane>
-        <a-text value="Back"
-          align="center" color="#222"
-          position="0 0 0.05" width="1.2"
-        ></a-text>
-      </a-entity>
+    /* ---------- canvas-text (Unicode) ---------- */
+    AFRAME.registerComponent('canvas-text',{
+      schema:{
+        value:{type:'string',default:'पाठ'}, width:{type:'number',default:1.2},
+        maxWidthPx:{type:'int',default:1024}, fontFamily:{type:'string',default:'NotoDev'},
+        fontSize:{type:'int',default:64}, lineHeight:{type:'number',default:1.25},
+        color:{type:'string',default:'#FFFFFF'}, bg:{type:'string',default:'transparent'},
+        paddingPx:{type:'int',default:16}, align:{type:'string',default:'center'}
+      },
+      init(){
+        this.canvas=document.createElement('canvas'); this.canvas.width=4; this.canvas.height=4;
+        this.ctx=this.canvas.getContext('2d');
+        this.texture=new THREE.CanvasTexture(this.canvas);
+        this.texture.generateMipmaps=false; this.texture.minFilter=THREE.LinearFilter; this.texture.magFilter=THREE.LinearFilter;
+        this.texture.wrapS=this.texture.wrapT=THREE.ClampToEdgeWrapping;
+        if(!this.el.getAttribute('geometry')) this.el.setAttribute('geometry','primitive:plane;width:1;height:0.5');
 
-      <!-- Scene 3: image + Back button -->
-      <a-sky id="sky3" src="#img3" visible="false"></a-sky>
-      <a-entity id="back3-entity" visible="false" position="-0.4 1.2 -1.5">
-        <a-plane id="back3"
-          color="#fff"
-          width="0.5" height="0.2"
-          material="shader: flat; transparent: true; opacity: 0.9"
-        ></a-plane>
-        <a-text value="Back"
-          align="center" color="#222"
-          position="0 0 0.05" width="1.2"
-        ></a-text>
-      </a-entity>
+        const attach=()=>{
+          const mesh=this.el.getObject3D('mesh'); if(!mesh) return;
+          mesh.material=new THREE.MeshBasicMaterial({ map:this.texture, transparent:true, side:THREE.DoubleSide, depthWrite:false });
+          mesh.material.needsUpdate=true;
+          this._ensureFont().then(()=>this._draw());
+        };
+        this.el.getObject3D('mesh') ? attach() : this.el.addEventListener('object3dset',e=>{ if(e.detail.type==='mesh') attach(); });
+      },
+      update(){ this._ensureFont().then(()=>this._draw()); },
+      _ensureFont(){ return (document.fonts&&document.fonts.load)?document.fonts.load(`16px "${this.data.fontFamily}"`).catch(()=>{}):Promise.resolve(); },
+      _wrapLines(t,max){ const ctx=this.ctx,w=t.split(/\s+/),o=[]; let line=''; for(const word of w){ const test=line?line+' '+word:word; if(ctx.measureText(test).width>max && line){o.push(line); line=word;} else line=test; } if(line) o.push(line); return o; },
+      _draw(){
+        const d=this.data,ctx=this.ctx,dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+        ctx.font=`${d.fontSize*dpr}px "${d.fontFamily}"`; ctx.textBaseline='alphabetic'; ctx.fillStyle=d.color;
+        const pad=d.paddingPx*dpr, maxW=d.maxWidthPx*dpr, lines=[];
+        d.value.split('\n').forEach(p=>{ if(p===''){lines.push(''); return;} this._wrapLines(p,maxW).forEach(l=>lines.push(l)); });
+        const lh=d.fontSize*d.lineHeight*dpr, textH=Math.max(lh,lines.length*lh);
+        const W=Math.max(4,Math.ceil(maxW+pad*2)), H=Math.max(4,Math.ceil(textH+pad*2));
+        if(this.canvas.width!==W||this.canvas.height!==H){ this.canvas.width=W; this.canvas.height=H; }
+        ctx.clearRect(0,0,W,H);
+        if(d.bg && d.bg!=='transparent'){ ctx.fillStyle=d.bg; ctx.fillRect(0,0,W,H); ctx.fillStyle=d.color; }
+        ctx.textAlign=d.align==='left'?'left':d.align==='right'?'right':'center';
+        const x=d.align==='left'?pad:d.align==='right'?(W-pad):(W/2);
+        let y=pad+(d.fontSize*dpr);
+        for(const line of lines){ ctx.fillText(line,x,y); y+=lh; }
+        this.texture.needsUpdate=true;
+        const aspect=H/W; this.el.setAttribute('geometry',`primitive:plane;width:${d.width};height:${d.width*aspect}`);
+      }
+    });
 
-      <!-- Camera & Cursor for gaze/tap -->
-      <a-entity camera look-controls position="0 1.6 0">
-        <a-cursor fuse="true" fuse-timeout="1200" color="#333"></a-cursor>
-      </a-entity>
+    /* ---------- tiny utils ---------- */
+    const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+    const waitForEnded=(m)=>new Promise(r=>{ const h=()=>{ m.removeEventListener('ended',h); r(); }; m.addEventListener('ended',h); });
+    const fadeIn=(el,ms=800)=>{ el.setAttribute('visible',true); el.setAttribute('material','opacity',0); el.setAttribute('animation__in',{property:'material.opacity',from:0,to:1,dur:ms}); };
+    const fadeOut=(el,ms=800)=>{ const cur=(el.getAttribute('material')||{}).opacity||1; el.setAttribute('animation__out',{property:'material.opacity',from:cur,to:0,dur:ms}); setTimeout(()=>el.setAttribute('visible',false),ms); };
+    const setButtonEnabled=(btn,on)=>btn.setAttribute('material','color', on? '#28a745' : '#666');
+    const setButtonInteractive=(btn,on)=>{ const cls=(btn.getAttribute('class')||''); const has=cls.split(/\s+/).includes('interactable'); if(on && !has) btn.setAttribute('class',(cls+' interactable').trim()); if(!on && has) btn.setAttribute('class',cls.replace(/\binteractable\b/,'').trim()); };
 
-      <!-- JS Scene Logic -->
-      <script>
-        // Helper for showing/hiding scenes and buttons
-        function showScene(sceneNum) {
-          // Hide all skies and buttons
-          document.querySelector('#sky1').setAttribute('visible', false);
-          document.querySelector('#sky2').setAttribute('visible', false);
-          document.querySelector('#sky3').setAttribute('visible', false);
-          document.querySelector('#btn1-entity').setAttribute('visible', false);
-          document.querySelector('#btn2-entity').setAttribute('visible', false);
-          document.querySelector('#back2-entity').setAttribute('visible', false);
-          document.querySelector('#back3-entity').setAttribute('visible', false);
+    /* ---------- preloader ---------- */
+    async function preloadAll(){
+      const scene=document.querySelector('a-scene'); if(!scene.hasLoaded) await new Promise(r=>scene.addEventListener('loaded',r,{once:true}));
+      const assets=document.querySelector('#assets'); if(!assets.hasLoaded) await new Promise(r=>assets.addEventListener('loaded',r,{once:true}));
+      try{ if(document.fonts?.load) await document.fonts.load('16px "NotoDev"'); }catch(e){}
+      const whenImg=(id)=>new Promise(res=>{ const el=document.getElementById(id); if(el.complete) return res(); el.addEventListener('load',()=>res(),{once:true}); el.addEventListener('error',()=>res(),{once:true}); });
+      const whenVid=(id)=>new Promise(res=>{ const v=document.getElementById(id); if(v.readyState>=1) return res(); const done=()=>{cleanup();res();}; const cleanup=()=>{ v.removeEventListener('loadedmetadata',done); v.removeEventListener('loadeddata',done); v.removeEventListener('canplay',done); v.removeEventListener('error',done); }; v.addEventListener('loadedmetadata',done,{once:true}); v.addEventListener('loadeddata',done,{once:true}); v.addEventListener('canplay',done,{once:true}); v.addEventListener('error',done,{once:true}); });
+      const whenAud=(id)=>new Promise(res=>{ const a=document.getElementById(id); if(a.readyState>=1) return res(); const done=()=>{cleanup();res();}; const cleanup=()=>{ a.removeEventListener('loadedmetadata',done); a.removeEventListener('canplaythrough',done); a.removeEventListener('error',done); }; a.addEventListener('loadedmetadata',done,{once:true}); a.addEventListener('canplaythrough',done,{once:true}); a.addEventListener('error',done,{once:true}); });
+      await Promise.all(['introBg','scene1','scene2'].map(whenImg));
+      await Promise.all(['v1','v2','v3','v4'].map(whenVid));
+      await Promise.all(['intro','a1','a2','a3','a4','a5'].map(whenAud));
+    }
 
-        let sceneNum = 1;
-        const sky = document.getElementById('sky');
-        const nextBtn = document.getElementById('nextBtn');
-        const backBtn = document.getElementById('backBtn');
-        nextBtn.addEventListener('click', () => {
-          if (sceneNum === 1) {
-            document.querySelector('#sky1').setAttribute('visible', true);
-            document.querySelector('#btn1-entity').setAttribute('visible', true);
-            sky.setAttribute('src', '#img2');
-            sceneNum = 2;
-            backBtn.setAttribute('visible', true);
-          } else if (sceneNum === 2) {
-            sky.setAttribute('src', '#img3');
-            sceneNum = 3;
-          }
-        });
-        backBtn.addEventListener('click', () => {
-          if (sceneNum === 2) {
-            document.querySelector('#sky2').setAttribute('visible', true);
-            document.querySelector('#btn2-entity').setAttribute('visible', true);
-            document.querySelector('#back2-entity').setAttribute('visible', true);
-          }
-          if (sceneNum === 3) {
-            document.querySelector('#sky3').setAttribute('visible', true);
-            document.querySelector('#back3-entity').setAttribute('visible', true);
-            sky.setAttribute('src', '#img1');
-            sceneNum = 1;
-            backBtn.setAttribute('visible', false);
-          } else if (sceneNum === 3) {
-            sky.setAttribute('src', '#img2');
-            sceneNum = 2;
+    /* ---------- flow ---------- */
+    async function boot(){
+      await preloadAll();
+      document.getElementById('boot').style.display='none';
+
+      const bg=document.getElementById('bg');
+      const enterBtn=document.getElementById('enterBtn');
+      const waitText=document.getElementById('waitText');
+      const intro=document.getElementById('intro');
+      const vrGate=document.getElementById('vrGate');
+      const cursor=document.getElementById('cursor');
+      const sceneEl=document.querySelector('a-scene');
+
+      bg.setAttribute('material','shader: flat; side: back; src:#introBg');
+      waitText.setAttribute('visible', true);
+      setButtonEnabled(enterBtn,false);
+      setButtonInteractive(enterBtn,false);
+
+      // Try autoplay
+      let autoplayOK=true;
+      try{ await intro.play(); }catch(e){ autoplayOK=false; }
+
+      if(!autoplayOK){
+        // Desktop/mobile fallback
+        const gate=document.getElementById('gate');
+        gate.style.display='flex';
+        document.getElementById('gateBtn').onclick=async ()=>{ try{ await intro.play(); }catch(e){} gate.style.display='none'; };
+      }
+
+      // When intro ends, arm the button (parent + child interactable for gaze)
+      intro.addEventListener('ended', ()=>{
+        try{ intro.pause(); intro.muted=true; }catch(e){}
+        waitText.setAttribute('visible', false);
+        setButtonEnabled(enterBtn,true);
+        setButtonInteractive(enterBtn,true);
+        const btnLabel = enterBtn.querySelector('[canvas-text]');
+        if (btnLabel) {
+          const cls = (btnLabel.getAttribute('class') || '');
+          if (!cls.split(/\s+/).includes('interactable')) {
+            btnLabel.setAttribute('class', (cls + ' interactable').trim());
           }
         }
+      }, {once:true});
 
-        // Start at scene 1
-        let sceneNum = 1;
+      // Proceed handler (click / tap / gaze click)
+      const proceed=()=>{
+        const enabled=(enterBtn.getAttribute('class')||'').includes('interactable');
+        if(!enabled) return;
 
-        // Next button 1 → Scene 2
-        document.querySelector('#btn1-entity').addEventListener('click', () => {
-          sceneNum = 2;
-          showScene(sceneNum);
+        // Fully disable Enter button
+        setButtonInteractive(enterBtn,false);
+        enterBtn.removeEventListener('click', proceed);
+        enterBtn.removeEventListener('mousedown', proceed);
+        enterBtn.setAttribute('visible', false);
+
+        // Shut down any VR audio gate remnants
+        vrGate.setAttribute('visible', false);
+        vrGate.setAttribute('class','');
+        vrGate.replaceWith(vrGate.cloneNode(true));
+
+        // Disable all post-intro interactions (cursor & raycaster)
+        cursor.setAttribute('cursor','enabled:false');
+        cursor.setAttribute('visible', false);
+        cursor.setAttribute('raycaster','enabled:false');
+
+        startScene1();
+      };
+      enterBtn.addEventListener('click', proceed);
+      enterBtn.addEventListener('mousedown', proceed);
+
+      // VR mode: if autoplay blocked, show gaze-to-start hotspot
+      const startAudio=async ()=>{
+        vrGate.removeEventListener('click', startAudio);
+        vrGate.setAttribute('visible', false);
+        vrGate.setAttribute('class','');
+        try{ await intro.play(); }catch(e){}
+      };
+
+      sceneEl.addEventListener('enter-vr', ()=>{
+        // Cursor owns ray + fuse for VR
+        cursor.setAttribute('cursor','rayOrigin: entity; fuse: true; fuseTimeout: 2000');
+        cursor.setAttribute('raycaster','objects: .interactable; far: 20; interval: 100; enabled:true');
+        if(intro.paused){
+          vrGate.setAttribute('visible', true);
+          vrGate.setAttribute('class','interactable');
+          vrGate.addEventListener('click', startAudio, {once:true});
+        }
+      });
+
+      sceneEl.addEventListener('exit-vr', ()=>{
+        cursor.setAttribute('cursor','rayOrigin: mouse; fuse: false');
+        cursor.setAttribute('raycaster','enabled:true');
+      });
+    }
+
+    async function startScene1(){
+      // extra safety (ensure gate cannot be hit)
+      const vg=document.getElementById('vrGate');
+      vg.setAttribute('visible', false);
+      vg.setAttribute('class','');
+      vg.replaceWith(vg.cloneNode(true));
+
+      const bg=document.getElementById('bg');
+      const thanksText=document.getElementById('thanksText');
+      const a1=document.getElementById('a1'), a2=document.getElementById('a2'), a3=document.getElementById('a3'), a4=document.getElementById('a4'), a5=document.getElementById('a5');
+      const v1=document.getElementById('v1'), v2=document.getElementById('v2'), v3=document.getElementById('v3'), v4=document.getElementById('v4');
+      const vp1=document.getElementById('vp1'), vp2=document.getElementById('vp2'), vp3=document.getElementById('vp3'), vp4=document.getElementById('vp4');
+      const intro=document.getElementById('intro'); try{ intro.pause(); intro.muted=true; }catch(e){}
+
+      bg.setAttribute('material','shader: flat; side: back; src:#scene1');
+      const cfg={inMs:800,outMs:800,delayThumbMs:2200};
+
+      await playSegment(a1,v1,vp1,cfg);
+      await playSegment(a2,v2,vp2,cfg);
+      await playSegment(a3,v3,vp3,cfg);
+      await playSegment(a4,v4,vp4,cfg);
+
+      bg.setAttribute('material','shader: flat; side: back; src:#scene2');
+      thanksText.setAttribute('visible',true);
+      try{ a5.play(); }catch(e){}
+    }
+
+    async function playSegment(audioEl, videoEl, surface, cfg){
+      try{
+        try{ videoEl.pause(); videoEl.currentTime=0; }catch(e){}
+        await new Promise(res=>{
+          if(videoEl.readyState>=2) return res();
+          const onReady=()=>{ cleanup(); res(); };
+          const cleanup=()=>{ videoEl.removeEventListener('loadeddata',onReady); videoEl.removeEventListener('canplay',onReady); videoEl.removeEventListener('loadedmetadata',onReady); };
+          videoEl.addEventListener('loadeddata',onReady,{once:true});
+          videoEl.addEventListener('canplay',onReady,{once:true});
+          videoEl.addEventListener('loadedmetadata',onReady,{once:true});
         });
-        // Next button 2 → Scene 3
-        document.querySelector('#btn2-entity').addEventListener('click', () => {
-          sceneNum = 3;
-          showScene(sceneNum);
-        });
-        // Back button 2 → Scene 1
-        document.querySelector('#back2-entity').addEventListener('click', () => {
-          sceneNum = 1;
-          showScene(sceneNum);
-        });
-        // Back button 3 → Scene 2
-        document.querySelector('#back3-entity').addEventListener('click', () => {
-          sceneNum = 2;
-          showScene(sceneNum);
-        });
-      </script>
-    </a-scene>
+
+        surface.setAttribute('visible',true);
+        surface.setAttribute('material','opacity',0);
+        try{ videoEl.muted=true; await videoEl.play(); await sleep(80); videoEl.pause(); }catch(e){}
+
+        await audioEl.play();
+        await sleep(cfg.delayThumbMs);
+        fadeIn(surface,cfg.inMs);
+
+        await waitForEnded(audioEl);
+        try{ videoEl.muted=false; videoEl.volume=1.0; }catch(e){}
+        try{ await videoEl.play(); }catch(e){}
+        await waitForEnded(videoEl);
+
+        fadeOut(surface,cfg.outMs);
+        await sleep(cfg.outMs+50);
+        surface.setAttribute('visible',false);
+      }catch(err){ console.warn('playSegment error',err); }
+    }
+
+    window.addEventListener('load', ()=>{
+      const scene=document.querySelector('a-scene');
+      (scene && scene.hasLoaded) ? boot() : scene.addEventListener('loaded', boot, {once:true});
+    });
+  </script>
+</head>
+
+<body>
+  <div id="versionTag">GH-ready v3.4</div>
+
+  <!-- Boot & desktop/mobile audio gate -->
+  <div id="boot"><div class="spinner"></div><div>Loading…</div><div style="opacity:.7;font-size:13px;margin-top:6px;">Preparing fonts, images, audio, and videos</div></div>
+  <div id="gate"><div>Tap to enable audio</div><button id="gateBtn" type="button">Start</button></div>
+
+  <a-scene renderer="colorManagement: true; antialias: true" background="color: #000">
+    <a-assets id="assets" timeout="60000">
+      <img id="introBg" src="intro.png" />
+      <img id="scene1"  src="Scene_1.jpg" />
+      <img id="scene2"  src="Scene_2.jpg" />
+
+      <audio id="intro" src="intro.mp3" preload="auto"></audio>
+      <audio id="a1" src="Audio_1.mp3" preload="auto"></audio>
+      <audio id="a2" src="Audio_2.mp3" preload="auto"></audio>
+      <audio id="a3" src="Audio_3.mp3" preload="auto"></audio>
+      <audio id="a4" src="Audio_4.mp3" preload="auto"></audio>
+      <audio id="a5" src="Audio_5.mp3" preload="auto"></audio>
+
+      <video id="v1" src="Video_1.mp4" preload="auto" playsinline webkit-playsinline></video>
+      <video id="v2" src="Video_2.mp4" preload="auto" playsinline webkit-playsinline></video>
+      <video id="v3" src="Video_3.mp4" preload="auto" playsinline webkit-playsinline></video>
+      <video id="v4" src="Video_4.mp4" preload="auto" playsinline webkit-playsinline></video>
+    </a-assets>
+
+    <!-- Rig + camera (no raycaster here) -->
+    <a-entity id="rig">
+      <a-entity id="camera" camera wasd-controls look-controls position="0 1.6 0">
+        <!-- Cursor owns ray + fuse -->
+        <a-entity id="cursor"
+                  cursor="rayOrigin: mouse; fuse: false"
+                  raycaster="objects: .interactable; far: 20; interval: 100; enabled:true"
+                  position="0 0 -1"
+                  geometry="primitive: ring; radiusInner: 0.01; radiusOuter: 0.015"
+                  material="shader: flat; color: white; opacity: 0.9"></a-entity>
+      </a-entity>
+    </a-entity>
+
+    <!-- 360 background -->
+    <a-sky id="bg" radius="500" material="shader: flat; side: back; src: #introBg"></a-sky>
+
+    <!-- VR audio gate (gaze to start if needed) -->
+    <a-plane id="vrGate" visible="false" position="0 1.6 -2" width="1.8" height="0.6"
+             material="color:#111; shader: flat">
+      <a-entity position="0 0 0.01" face-camera
+        canvas-text="value: नज़र रखें (2 सेकंड) शुरू करने के लिए; width: 1.7; fontSize: 58; align: center;"></a-entity>
+    </a-plane>
+
+    <!-- Enter button (disabled until intro ends) -->
+    <a-plane id="enterBtn"
+             position="-1 1.3 -2" width="0.6" height="0.25"
+             material="color: #666; opacity: 1; shader: flat"
+             face-camera>
+      <a-entity position="0 0 0.01" face-camera
+                canvas-text="value: आगे बढ़ें; width: 1.2; fontSize: 64; align: center;"></a-entity>
+    </a-plane>
+
+    <!-- Wait text -->
+    <a-entity id="waitText" position="-1 1.8 -2" visible="true" face-camera
+              canvas-text="value: कृपया ऑडियो पूरा होने तक प्रतीक्षा करें.; width: 1.8; fontSize: 60; align: center; color:#ffffff;"></a-entity>
+
+    <!-- Videos (hidden until used) -->
+    <a-video id="vp1" position="-1.2 1.35 -2" width="3.6" height="2.025" src="#v1"
+             material="shader: flat; opacity: 0" visible="false" face-camera></a-video>
+    <a-video id="vp2" position="0.5 1.35 -2"  width="3.6" height="2.025" src="#v2"
+             material="shader: flat; opacity: 0" visible="false" face-camera></a-video>
+    <a-video id="vp3" position="1.9 1.15 -2.2" width="3.6" height="2.025"  src="#v3"
+             material="shader: flat; opacity: 0" visible="false" face-camera></a-video>
+    <a-video id="vp4" position="-2.0 1.1 -2.4" width="3.6" height="2.025"  src="#v4"
+             material="shader: flat; opacity: 0" visible="false" face-camera></a-video>
+
+    <!-- Thanks (kept from your file) -->
+    <a-entity id="thanksText" position="-2.0 1.1 -2.4" visible="false" face-camera
+              canvas-text="value: धन्यवाद; width: 9; fontSize: 72; align: center; color: #8B4513;"></a-entity>
+  </a-scene>
+</body>
+</html>
+
